@@ -3,525 +3,268 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pronounce Clip Lab</title>
+  <title>Pronounce Clip Lab MVP</title>
   <style>
     :root {
       --bg: #f6f7f8;
-      --panel: #ffffff;
-      --ink: #171717;
+      --panel: #fff;
+      --ink: #181818;
       --muted: #667085;
       --line: #dfe3e8;
-      --green: #00a878;
-      --green-dark: #047857;
-      --coral: #ff6b57;
-      --yellow: #f5c84b;
-      --blue: #3478f6;
-      --shadow: 0 14px 38px rgba(30, 41, 59, .12);
+      --green: #58ad7d;
+      --green-soft: #eef9f2;
+      --red: #dc6358;
+      --yellow: #f4dc8a;
+      --dark: #121722;
+      --button: #242a36;
+      --shadow: 0 16px 40px rgba(15, 23, 42, .12);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      color: var(--ink);
-      background:
-        linear-gradient(180deg, #ffffff 0, var(--bg) 320px),
-        var(--bg);
-    }
-
-    button, input, select {
-      font: inherit;
-    }
-
-    button {
-      border: 0;
-      cursor: pointer;
-      transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease;
-    }
-
-    button:active { transform: translateY(1px); }
-    button:focus-visible, input:focus-visible, select:focus-visible {
-      outline: 3px solid rgba(52, 120, 246, .25);
+    body { margin: 0; color: var(--ink); background: var(--bg); }
+    button, input, select { font: inherit; }
+    button { border: 0; cursor: pointer; }
+    button, input, select, textarea { border-radius: 8px; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 3px solid rgba(88, 173, 125, .25);
       outline-offset: 2px;
     }
 
-    .app {
-      min-height: 100vh;
-      display: grid;
-      grid-template-columns: 260px minmax(0, 1fr);
-    }
-
+    .app { min-height: 100vh; display: grid; grid-template-columns: 268px minmax(0, 1fr); }
     .sidebar {
       position: sticky;
       top: 0;
       height: 100vh;
-      padding: 22px 18px;
+      padding: 18px;
       border-right: 1px solid var(--line);
-      background: rgba(255, 255, 255, .86);
+      background: rgba(255, 255, 255, .92);
       backdrop-filter: blur(18px);
     }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 26px;
-    }
-
-    .mark {
-      width: 38px;
-      height: 38px;
-      border-radius: 8px;
+    .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+    .logo {
+      width: 44px;
+      height: 44px;
       display: grid;
       place-items: center;
-      color: #fff;
-      background: conic-gradient(from 210deg, var(--green), var(--blue), var(--coral), var(--green));
+      color: white;
       font-weight: 800;
+      background: linear-gradient(135deg, #3e79f7, #58ad7d 54%, #e86f5b);
+      border-radius: 8px;
     }
+    .brand strong { display: block; font-size: 18px; }
+    .brand span { color: var(--muted); font-size: 13px; }
 
-    .brand strong {
-      display: block;
-      font-size: 17px;
-      letter-spacing: 0;
-    }
-
-    .brand span {
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .nav {
-      display: grid;
-      gap: 8px;
-    }
-
+    .nav { display: grid; gap: 8px; }
     .nav button {
-      min-height: 44px;
       width: 100%;
+      min-height: 46px;
       display: grid;
-      grid-template-columns: 24px 1fr;
+      grid-template-columns: 28px 1fr;
       align-items: center;
       gap: 10px;
       padding: 0 12px;
-      border-radius: 8px;
       color: var(--muted);
       background: transparent;
       text-align: left;
     }
-
     .nav button.active {
       color: var(--ink);
-      background: #eefaf5;
+      background: var(--green-soft);
       box-shadow: inset 3px 0 0 var(--green);
     }
 
-    .sync-note {
+    .sync-card {
       margin-top: 26px;
       padding: 14px;
       border: 1px solid var(--line);
+      background: var(--panel);
       border-radius: 8px;
-      background: #fff;
     }
+    .sync-card strong { display: block; margin-bottom: 8px; font-size: 14px; }
+    .sync-card code { display: block; color: var(--muted); font-size: 12px; line-height: 1.6; white-space: pre-wrap; }
 
-    .sync-note strong {
-      display: block;
-      font-size: 13px;
-      margin-bottom: 8px;
-    }
+    main { min-width: 0; padding: 28px clamp(18px, 4vw, 48px) 42px; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+    h1 { margin: 0; font-size: clamp(30px, 4vw, 56px); line-height: 1.08; letter-spacing: 0; }
+    h2 { margin: 0; padding: 18px 18px 10px; font-size: 22px; }
 
-    .sync-note code {
-      display: block;
-      white-space: pre-wrap;
-      color: var(--muted);
-      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-      font-size: 11px;
-      line-height: 1.55;
-    }
-
-    .main {
-      min-width: 0;
-      padding: 28px clamp(18px, 4vw, 44px) 42px;
-    }
-
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 22px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: clamp(24px, 3vw, 38px);
-      letter-spacing: 0;
-      line-height: 1.12;
-    }
-
-    .account-pill {
-      min-height: 40px;
+    .guest {
+      min-width: 126px;
+      height: 46px;
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 7px 10px;
+      gap: 12px;
+      padding: 0 14px;
       border: 1px solid var(--line);
-      border-radius: 999px;
       background: var(--panel);
       color: var(--muted);
-      box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+      border-radius: 999px;
     }
-
     .avatar {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
+      width: 30px;
+      height: 30px;
       display: grid;
       place-items: center;
-      color: #fff;
-      background: var(--coral);
+      color: white;
+      background: #e86f5b;
+      border-radius: 50%;
       font-weight: 800;
-      font-size: 13px;
     }
 
-    .search-band {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 168px 168px 52px;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 18px;
-    }
-
-    .field, .select {
-      height: 52px;
+    .search { display: grid; grid-template-columns: minmax(0, 1fr) 170px 170px 56px; gap: 12px; margin-bottom: 22px; }
+    input, select, textarea {
       border: 1px solid var(--line);
-      border-radius: 8px;
       background: var(--panel);
       color: var(--ink);
-      box-shadow: 0 8px 20px rgba(15, 23, 42, .05);
     }
-
-    .field {
-      padding: 0 16px;
-      font-size: 17px;
-    }
-
-    .select {
-      padding: 0 12px;
-      appearance: none;
-      background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
-      background-position: calc(100% - 18px) 22px, calc(100% - 13px) 22px;
-      background-size: 5px 5px, 5px 5px;
-      background-repeat: no-repeat;
-    }
-
-    .icon-btn {
-      width: 52px;
-      height: 52px;
-      border-radius: 8px;
-      display: grid;
-      place-items: center;
+    .search input, .search select { height: 56px; padding: 0 16px; font-size: 18px; box-shadow: 0 8px 20px rgba(15, 23, 42, .04); }
+    .search button, .primary {
+      color: white;
       background: var(--green);
-      color: #fff;
-      font-size: 20px;
-      box-shadow: 0 12px 28px rgba(0, 168, 120, .26);
+      box-shadow: 0 12px 26px rgba(88, 173, 125, .28);
     }
+    .search button { height: 56px; font-size: 24px; }
 
-    .content {
+    .layout { display: grid; grid-template-columns: minmax(0, 1.38fr) minmax(340px, .82fr); gap: 22px; align-items: start; }
+    .player { overflow: hidden; border-radius: 8px; background: #262626; box-shadow: var(--shadow); }
+    iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; background: #262626; }
+    .controls {
+      min-height: 74px;
       display: grid;
-      grid-template-columns: minmax(0, 1.45fr) minmax(300px, .85fr);
-      gap: 20px;
-      align-items: start;
-    }
-
-    .player-zone {
-      display: grid;
-      gap: 14px;
-    }
-
-    .player-shell {
-      overflow: hidden;
-      border-radius: 8px;
-      background: #0e1116;
-      box-shadow: var(--shadow);
-    }
-
-    .video-frame {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      border: 0;
-      display: block;
-    }
-
-    .transport {
-      min-height: 64px;
-      display: grid;
-      grid-template-columns: repeat(6, 48px) 1fr 88px;
-      gap: 8px;
+      grid-template-columns: repeat(6, 52px) 1fr 94px;
+      gap: 10px;
       align-items: center;
-      padding: 10px;
-      border-top: 1px solid rgba(255, 255, 255, .08);
-      background: #141922;
+      padding: 12px;
+      background: var(--dark);
     }
-
-    .transport button {
-      width: 48px;
-      height: 42px;
-      border-radius: 8px;
-      background: #232a36;
-      color: #fff;
-      font-size: 18px;
+    .controls button, .controls select {
+      height: 48px;
+      color: white;
+      background: var(--button);
+      border: 1px solid rgba(255, 255, 255, .06);
+      font-size: 20px;
     }
+    .progress { height: 8px; background: #eef2f7; border-radius: 999px; }
 
-    .speed {
-      justify-self: end;
-      min-width: 82px;
-      height: 42px;
-      border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, .12);
-      color: #fff;
-      background: #232a36;
-    }
-
-    .caption-strip {
-      min-height: 60px;
+    .caption-main {
+      min-height: 84px;
       display: flex;
       align-items: center;
-      padding: 14px 16px;
+      margin-top: 18px;
+      padding: 18px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: var(--panel);
-      font-size: 18px;
+      font-size: 24px;
       line-height: 1.45;
     }
+    mark { padding: 0 5px; background: var(--yellow); border-radius: 5px; }
 
-    .caption-strip mark {
-      padding: 0 3px;
-      border-radius: 4px;
-      background: rgba(245, 200, 75, .55);
-    }
-
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .tool-btn {
-      min-height: 42px;
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .tool {
+      min-height: 48px;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 0 12px;
+      gap: 10px;
+      padding: 0 16px;
       border: 1px solid var(--line);
-      border-radius: 8px;
-      color: var(--ink);
       background: var(--panel);
+      color: var(--ink);
+      font-size: 17px;
     }
-
-    .tool-btn.primary {
-      color: #fff;
-      border-color: var(--green);
-      background: var(--green);
-    }
-
-    .side-stack {
-      display: grid;
-      gap: 14px;
-    }
+    .tool.danger { color: white; border-color: var(--red); background: var(--red); }
+    .tool.primary { border-color: var(--green); }
 
     .panel {
       border: 1px solid var(--line);
       border-radius: 8px;
       background: var(--panel);
-      box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, .08);
     }
+    .panel + .panel { margin-top: 16px; }
+    .list { display: grid; gap: 10px; padding: 10px 14px 16px; }
 
-    .panel h2 {
-      margin: 0;
-      padding: 14px 14px 10px;
-      font-size: 16px;
-      letter-spacing: 0;
-    }
-
-    .result-list, .saved-list, .record-list {
+    .video-item {
+      width: 100%;
       display: grid;
-      gap: 8px;
-      padding: 0 10px 10px;
-    }
-
-    .video-card {
-      display: grid;
-      grid-template-columns: 96px minmax(0, 1fr) 36px;
-      gap: 10px;
+      grid-template-columns: 108px minmax(0, 1fr) 38px;
+      gap: 12px;
       align-items: center;
-      padding: 8px;
+      padding: 10px;
+      background: #fafafa;
       border: 1px solid transparent;
       border-radius: 8px;
-      background: #fafafa;
+      text-align: left;
     }
+    .video-item.active { background: var(--green-soft); border-color: rgba(88, 173, 125, .42); }
+    .thumb { width: 108px; aspect-ratio: 16 / 9; object-fit: cover; background: #111827; border-radius: 7px; }
+    .video-item strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; }
+    .video-item span span { display: block; margin-top: 5px; color: var(--muted); font-size: 13px; }
 
-    .video-card.active {
-      border-color: rgba(0, 168, 120, .35);
-      background: #effaf6;
-    }
-
-    .thumb {
-      width: 96px;
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
-      border-radius: 6px;
-      background: #111827;
-    }
-
-    .video-card strong {
-      display: block;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 14px;
-    }
-
-    .video-card span {
-      display: block;
-      margin-top: 4px;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .tiny-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      color: var(--muted);
-      background: transparent;
-      font-size: 18px;
-    }
-
-    .tiny-icon.saved {
-      color: #fff;
-      background: var(--coral);
-    }
-
-    .tab-page { display: none; }
-    .tab-page.active { display: block; }
-
-    .page-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-      gap: 18px;
-      align-items: start;
-    }
-
-    .saved-item, .record-item {
-      display: grid;
-      gap: 7px;
+    .caption-item {
+      min-height: 54px;
       padding: 12px;
       border-radius: 8px;
       background: #fafafa;
-    }
-
-    .saved-item strong, .record-item strong { font-size: 14px; }
-    .saved-item span, .record-item span { color: var(--muted); font-size: 12px; }
-
-    .settings-grid {
-      display: grid;
-      gap: 12px;
-      padding: 14px;
-    }
-
-    .setting-row {
-      display: grid;
-      gap: 8px;
-    }
-
-    .setting-row label {
       color: var(--muted);
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
+      text-align: center;
     }
+    .caption-item.active { color: var(--ink); background: var(--green-soft); border: 1px solid rgba(88, 173, 125, .42); }
 
-    .setting-row input, .setting-row select {
-      height: 44px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 0 12px;
-      background: #fff;
-    }
+    .grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .6fr); gap: 18px; align-items: start; }
+    .card { padding: 14px; background: #fafafa; border-radius: 8px; }
+    .card strong { display: block; margin-bottom: 6px; }
+    .card span, .muted { color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .row-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .mini { min-height: 34px; padding: 0 10px; border: 1px solid var(--line); background: white; color: var(--muted); }
 
-    .status {
-      min-height: 24px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .meter {
-      height: 8px;
-      overflow: hidden;
-      border-radius: 999px;
-      background: #e9edf2;
-    }
-
-    .meter span {
-      display: block;
-      height: 100%;
-      width: 0;
-      background: linear-gradient(90deg, var(--green), var(--coral));
-      transition: width .2s ease;
-    }
+    .settings { display: grid; gap: 14px; padding: 14px; }
+    .field { display: grid; gap: 7px; }
+    .field label { color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; }
+    .field input, .field select, .field textarea { min-height: 44px; padding: 0 12px; }
+    .field textarea { min-height: 86px; padding: 12px; resize: vertical; }
+    .status { min-height: 24px; margin-top: 12px; color: var(--muted); font-size: 14px; line-height: 1.55; }
 
     @media (max-width: 980px) {
       .app { grid-template-columns: 1fr; }
       .sidebar {
+        z-index: 10;
         position: fixed;
-        z-index: 20;
         left: 0;
         right: 0;
         bottom: 0;
         top: auto;
-        height: 68px;
+        height: 70px;
         padding: 8px;
         border-right: 0;
         border-top: 1px solid var(--line);
       }
-      .brand, .sync-note { display: none; }
-      .nav {
-        grid-template-columns: repeat(4, 1fr);
-        height: 100%;
-      }
-      .nav button {
-        min-height: 52px;
-        grid-template-columns: 1fr;
-        justify-items: center;
-        gap: 2px;
-        padding: 4px;
-        font-size: 11px;
-        text-align: center;
-      }
-      .nav button.active { box-shadow: inset 0 3px 0 var(--green); }
-      .main { padding-bottom: 92px; }
-      .content, .page-grid { grid-template-columns: 1fr; }
-      .search-band { grid-template-columns: 1fr 1fr 52px; }
-      .search-band .field { grid-column: 1 / -1; }
+      .brand, .sync-card { display: none; }
+      .nav { grid-template-columns: repeat(4, 1fr); height: 100%; }
+      .nav button { grid-template-columns: 1fr; justify-items: center; gap: 2px; min-height: 52px; font-size: 12px; text-align: center; }
+      main { padding-bottom: 96px; }
+      .layout, .grid2 { grid-template-columns: 1fr; }
+      .search { grid-template-columns: 1fr 1fr 56px; }
+      .search input { grid-column: 1 / -1; }
     }
 
     @media (max-width: 560px) {
-      .main { padding: 18px 12px 92px; }
-      .topbar { align-items: flex-start; }
-      .account-pill { max-width: 118px; }
-      .account-pill span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      .search-band { grid-template-columns: 1fr 52px; }
-      .search-band .select { grid-column: span 1; }
-      .transport {
-        grid-template-columns: repeat(4, 1fr);
-      }
-      .transport button, .speed { width: 100%; min-width: 0; }
-      .video-card { grid-template-columns: 86px minmax(0, 1fr) 34px; }
-      .thumb { width: 86px; }
+      main { padding: 18px 12px 96px; }
+      .top { align-items: flex-start; }
+      h1 { font-size: 34px; }
+      .guest { min-width: 76px; }
+      .guest span:last-child { display: none; }
+      .search { grid-template-columns: 1fr 56px; }
+      .search select { grid-column: span 1; }
+      .controls { grid-template-columns: repeat(4, 1fr); }
+      .controls button, .controls select { width: 100%; }
+      .video-item { grid-template-columns: 92px minmax(0, 1fr) 30px; }
+      .thumb { width: 92px; }
     }
   </style>
 </head>
@@ -529,19 +272,16 @@
   <div class="app">
     <aside class="sidebar">
       <div class="brand">
-        <div class="mark">P</div>
-        <div>
-          <strong>Pronounce Clip Lab</strong>
-          <span>HTML prototype</span>
-        </div>
+        <div class="logo">P</div>
+        <div><strong>Pronounce Clip Lab</strong><span>MVP app</span></div>
       </div>
-      <nav class="nav" aria-label="Main">
-        <button class="active" data-tab="practice" title="연습"><span>⌕</span><span>연습</span></button>
-        <button data-tab="saved" title="저장"><span>★</span><span>저장</span></button>
-        <button data-tab="recordings" title="녹음"><span>●</span><span>녹음</span></button>
-        <button data-tab="settings" title="설정"><span>⚙</span><span>설정</span></button>
+      <nav class="nav">
+        <button class="active" data-page="practice"><span>⌕</span><span>연습</span></button>
+        <button data-page="saved"><span>★</span><span>저장</span></button>
+        <button data-page="recordings"><span>●</span><span>녹음</span></button>
+        <button data-page="settings"><span>⚙</span><span>설정</span></button>
       </nav>
-      <div class="sync-note">
+      <div class="sync-card">
         <strong>Sync model</strong>
         <code>id
 created_at
@@ -551,43 +291,42 @@ canonical_version</code>
       </div>
     </aside>
 
-    <main class="main">
-      <section class="tab-page active" id="practice">
-        <div class="topbar">
+    <main>
+      <section class="page active" id="practice">
+        <div class="top">
           <h1>오늘 어떤 발음을 연습할까요?</h1>
-          <div class="account-pill"><span class="avatar">G</span><span>Guest</span></div>
+          <div class="guest"><span class="avatar">G</span><span id="guestName">Guest</span></div>
         </div>
 
-        <form class="search-band" id="searchForm">
-          <input class="field" id="query" value="comfortable" autocomplete="off" aria-label="검색어">
-          <select class="select" id="language" aria-label="언어">
-            <option value="english">English</option>
-            <option value="french">French</option>
-            <option value="spanish">Spanish</option>
-            <option value="german">German</option>
+        <form class="search" id="searchForm">
+          <input id="query" value="comfortable" autocomplete="off" aria-label="검색어">
+          <select id="language" aria-label="언어">
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
           </select>
-          <select class="select" id="accent" aria-label="악센트">
+          <select id="accent" aria-label="악센트">
             <option value="us">US</option>
             <option value="uk">UK</option>
-            <option value="au">AU</option>
-            <option value="any">Any</option>
+            <option value="any">ANY</option>
           </select>
-          <button class="icon-btn" title="검색">⌕</button>
+          <button title="검색">⌕</button>
         </form>
 
-        <div class="content">
-          <div class="player-zone">
-            <div class="player-shell">
-              <iframe class="video-frame" id="player" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-              <div class="transport">
-                <button type="button" id="prevBtn" title="이전">‹</button>
-                <button type="button" id="rewindBtn" title="되감기">↺</button>
-                <button type="button" id="playBtn" title="재생">▶</button>
-                <button type="button" id="forwardBtn" title="앞으로">↻</button>
-                <button type="button" id="nextBtn" title="다음">›</button>
-                <button type="button" id="recordBtn" title="녹음">●</button>
-                <div class="meter" aria-hidden="true"><span id="recordMeter"></span></div>
-                <select class="speed" id="speed" aria-label="속도">
+        <div class="layout">
+          <div>
+            <div class="player">
+              <iframe id="player" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+              <div class="controls">
+                <button id="prev" type="button" title="이전">‹</button>
+                <button id="back" type="button" title="되감기">↺</button>
+                <button id="playHint" type="button" title="재생">▶</button>
+                <button id="nextCaption" type="button" title="다음 자막">↻</button>
+                <button id="next" type="button" title="다음">›</button>
+                <button id="record" type="button" title="녹음">●</button>
+                <div class="progress"></div>
+                <select id="speed" aria-label="속도">
                   <option>0.75x</option>
                   <option selected>1x</option>
                   <option>1.25x</option>
@@ -596,93 +335,113 @@ canonical_version</code>
               </div>
             </div>
 
-            <div class="caption-strip" id="caption"></div>
+            <div class="caption-main" id="mainCaption"></div>
             <div class="actions">
-              <button class="tool-btn primary" id="saveVideoBtn" type="button"><span>★</span><span>영상 저장</span></button>
-              <button class="tool-btn" id="saveWordBtn" type="button"><span>＋</span><span>단어 저장</span></button>
-              <button class="tool-btn" id="defineBtn" type="button"><span>≡</span><span>뜻 보기</span></button>
-              <button class="tool-btn" id="shareBtn" type="button"><span>↗</span><span>공유</span></button>
+              <button class="tool primary" id="saveVideo" type="button"><span>★</span><span>영상 저장</span></button>
+              <button class="tool" id="saveWord" type="button"><span>＋</span><span>단어 저장</span></button>
+              <button class="tool" id="define" type="button"><span>≡</span><span>메모</span></button>
+              <button class="tool" id="share" type="button"><span>↗</span><span>공유</span></button>
             </div>
-            <div class="status" id="status"></div>
+            <div class="status" id="notice"></div>
           </div>
 
-          <div class="side-stack">
+          <aside>
             <section class="panel">
               <h2>영상</h2>
-              <div class="result-list" id="results"></div>
+              <div class="list" id="videoList"></div>
             </section>
             <section class="panel">
-              <h2>자막</h2>
-              <div class="result-list" id="captions"></div>
+              <h2>연습 문장</h2>
+              <div class="list" id="captionList"></div>
             </section>
-          </div>
+          </aside>
         </div>
       </section>
 
-      <section class="tab-page" id="saved">
-        <div class="topbar">
+      <section class="page" id="saved">
+        <div class="top">
           <h1>저장한 항목</h1>
-          <div class="account-pill"><span class="avatar">S</span><span id="savedCount">0</span></div>
+          <div class="guest"><span class="avatar">S</span><span id="savedTotal">0</span></div>
         </div>
-        <div class="page-grid">
+        <div class="grid2">
           <section class="panel">
             <h2>영상</h2>
-            <div class="saved-list" id="savedVideos"></div>
+            <div class="list" id="savedVideos"></div>
           </section>
           <section class="panel">
             <h2>단어</h2>
-            <div class="saved-list" id="savedWords"></div>
+            <div class="list" id="savedWords"></div>
           </section>
         </div>
       </section>
 
-      <section class="tab-page" id="recordings">
-        <div class="topbar">
+      <section class="page" id="recordings">
+        <div class="top">
           <h1>녹음 연습</h1>
-          <div class="account-pill"><span class="avatar">R</span><span id="recordCount">0</span></div>
+          <div class="guest"><span class="avatar">R</span><span id="recordTotal">0</span></div>
         </div>
         <section class="panel">
           <h2>내 녹음</h2>
-          <div class="record-list" id="recordList"></div>
+          <div class="list" id="recordList"></div>
         </section>
       </section>
 
-      <section class="tab-page" id="settings">
-        <div class="topbar">
+      <section class="page" id="settings">
+        <div class="top">
           <h1>설정</h1>
-          <div class="account-pill"><span class="avatar">A</span><span>Local</span></div>
+          <div class="guest"><span class="avatar">A</span><span>Local</span></div>
         </div>
-        <section class="panel">
-          <h2>연결</h2>
-          <div class="settings-grid">
-            <div class="setting-row">
-              <label for="apiBase">API base</label>
-              <input id="apiBase" placeholder="https://example.com/api">
+        <div class="grid2">
+          <section class="panel">
+            <h2>API</h2>
+            <div class="settings">
+              <div class="field">
+                <label for="searchEndpoint">YouTube 검색 함수 URL</label>
+                <input id="searchEndpoint" placeholder="https://PROJECT.functions.supabase.co/youtube-search">
+              </div>
+              <div class="field">
+                <label for="supabaseUrl">Supabase URL</label>
+                <input id="supabaseUrl" placeholder="https://PROJECT.supabase.co">
+              </div>
+              <div class="field">
+                <label for="supabaseAnon">Supabase anon key</label>
+                <textarea id="supabaseAnon" placeholder="anon public key"></textarea>
+              </div>
+              <div class="field">
+                <label for="userId">사용자 ID</label>
+                <input id="userId">
+              </div>
+              <button class="tool primary" id="saveSettings" type="button"><span>✓</span><span>설정 저장</span></button>
+              <div class="status" id="settingsStatus"></div>
             </div>
-            <div class="setting-row">
-              <label for="token">Token</label>
-              <input id="token" type="password" placeholder="optional">
+          </section>
+
+          <section class="panel">
+            <h2>동기화</h2>
+            <div class="settings">
+              <button class="tool" id="syncAuto" type="button"><span>↕</span><span>자동 병합 동기화</span></button>
+              <button class="tool primary" id="syncCanonical" type="button"><span>⇧</span><span>이 기기를 최종본으로</span></button>
+              <button class="tool" id="syncCloud" type="button"><span>⇩</span><span>클라우드 기준 반영</span></button>
+              <div class="muted">최종본 버전이 바뀐 경우에는 로컬 전용 항목을 보존하지 않고 클라우드 기준으로 맞춥니다.</div>
+              <div class="status" id="syncStatus"></div>
             </div>
-            <div class="setting-row">
-              <label for="syncMode">Sync mode</label>
-              <select id="syncMode">
-                <option value="merge">자동 병합</option>
-                <option value="canonical">이 기기를 최종본으로 지정</option>
-                <option value="cloud">클라우드 기준 반영</option>
-              </select>
-            </div>
-            <button class="tool-btn primary" id="testSyncBtn" type="button"><span>↕</span><span>연결 테스트</span></button>
-            <div class="status" id="syncStatus"></div>
-          </div>
-        </section>
+          </section>
+        </div>
       </section>
     </main>
   </div>
 
   <script>
+    const fallbackVideos = [
+      { videoId: "M7lc1UVf-VE", title: "YouTube player demo", channel: "Embeddable sample", thumbnail: "https://img.youtube.com/vi/M7lc1UVf-VE/mqdefault.jpg" },
+      { videoId: "jNQXAC9IVRw", title: "Short speech sample", channel: "Reference clip", thumbnail: "https://img.youtube.com/vi/jNQXAC9IVRw/mqdefault.jpg" }
+    ];
+
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => [...document.querySelectorAll(selector)];
     const now = () => new Date().toISOString();
     const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
-    const store = {
+    const storage = {
       get(key, fallback) {
         try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
         catch { return fallback; }
@@ -690,287 +449,484 @@ canonical_version</code>
       set(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
     };
 
-    const sampleVideos = [
-      {
-        id: "ysz5S6PUM-U",
-        title: "Comfortable conversation example",
-        channel: "Learning clip",
-        accent: "us",
-        language: "english",
-        captions: [
-          "It is more <mark>comfortable</mark> when you practice in short clips.",
-          "Try saying the sentence slowly, then repeat it at normal speed.",
-          "Small pronunciation details become easier when you hear them in context."
-        ]
-      },
-      {
-        id: "2vjPBrBU-TM",
-        title: "Everyday phrase practice",
-        channel: "Native speech",
-        accent: "uk",
-        language: "english",
-        captions: [
-          "The rhythm of a sentence often matters as much as a single word.",
-          "Listen once for meaning, then again for stress and timing.",
-          "Save useful clips so you can compare your recording later."
-        ]
-      },
-      {
-        id: "M7lc1UVf-VE",
-        title: "Clear speech sample",
-        channel: "Reference clip",
-        accent: "any",
-        language: "english",
-        captions: [
-          "Search results can be connected to a real backend when an API is ready.",
-          "The player, captions, saved words, and recorder are already wired locally.",
-          "Use canonical sync when one device must become the final source."
-        ]
-      }
-    ];
-
     const state = {
-      videos: sampleVideos,
+      videos: [],
       active: 0,
-      captionIndex: 0,
-      savedVideos: store.get("pcl:savedVideos", []),
-      savedWords: store.get("pcl:savedWords", []),
-      recordings: store.get("pcl:recordings", []),
-      mediaRecorder: null,
+      sentence: 0,
+      savedVideos: storage.get("pcl:savedVideos", []),
+      savedWords: storage.get("pcl:savedWords", []),
+      recordings: storage.get("pcl:recordings", []),
+      settings: storage.get("pcl:settings", {}),
+      recorder: null,
       chunks: [],
-      meterTimer: null
+      startedAt: 0
     };
 
-    const $ = (selector) => document.querySelector(selector);
-    const $$ = (selector) => [...document.querySelectorAll(selector)];
-
-    function recordMeta(data) {
+    function meta(data) {
       return { id: uid(), created_at: now(), updated_at: now(), deleted_at: null, ...data };
     }
 
-    function setStatus(text) {
-      $("#status").textContent = text;
-      if (text) setTimeout(() => $("#status").textContent = "", 2500);
+    function cleanWord() {
+      return ($("#query").value.trim() || "comfortable").replace(/[<>&"]/g, "");
     }
 
-    function activeVideo() {
-      return state.videos[state.active] || sampleVideos[0];
+    function makeSentences(word) {
+      return [
+        `Listen for <mark>${word}</mark> in a short clip.`,
+        `Repeat <mark>${word}</mark> slowly, then try normal speed.`,
+        `Save this clip if <mark>${word}</mark> is useful for practice.`
+      ];
+    }
+
+    function currentVideo() {
+      return state.videos[state.active] || { ...fallbackVideos[0], sentences: makeSentences(cleanWord()) };
+    }
+
+    function iframeSrc(video) {
+      const origin = location.origin === "null" ? "http://localhost" : location.origin;
+      const params = new URLSearchParams({ rel: "0", playsinline: "1", origin });
+      return `https://www.youtube.com/embed/${video.videoId}?${params.toString()}`;
     }
 
     function renderPlayer() {
-      const video = activeVideo();
-      const origin = location.origin === "null" ? "http://localhost" : location.origin;
-      $("#player").src = `https://www.youtube.com/embed/${video.id}?enablejsapi=1&rel=0&origin=${encodeURIComponent(origin)}`;
-      $("#caption").innerHTML = video.captions[state.captionIndex] || "";
-      renderResults();
-      renderCaptions();
+      const video = currentVideo();
+      $("#player").src = iframeSrc(video);
+      $("#mainCaption").innerHTML = video.sentences[state.sentence] || "";
+      renderVideoList();
+      renderSentenceList();
     }
 
-    function renderResults() {
-      const root = $("#results");
+    function renderVideoList() {
+      const root = $("#videoList");
       root.innerHTML = "";
       state.videos.forEach((video, index) => {
-        const item = document.createElement("div");
-        item.className = "video-card" + (index === state.active ? " active" : "");
-        item.innerHTML = `
-          <img class="thumb" src="https://img.youtube.com/vi/${video.id}/mqdefault.jpg" alt="">
-          <button type="button" class="tiny-icon" title="재생">▶</button>
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "video-item" + (index === state.active ? " active" : "");
+        row.innerHTML = `
+          <img class="thumb" src="${video.thumbnail || `https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg`}" alt="">
+          <span><strong>${video.title}</strong><span>${video.channel || "YouTube"} · ${video.videoId}</span></span>
+          <span>▶</span>
         `;
-        const text = document.createElement("div");
-        text.innerHTML = `<strong>${video.title}</strong><span>${video.channel} · ${video.accent.toUpperCase()}</span>`;
-        item.insertBefore(text, item.children[1]);
-        item.addEventListener("click", () => {
+        row.addEventListener("click", () => {
           state.active = index;
-          state.captionIndex = 0;
+          state.sentence = 0;
           renderPlayer();
         });
-        root.appendChild(item);
-      });
-    }
-
-    function renderCaptions() {
-      const root = $("#captions");
-      root.innerHTML = "";
-      activeVideo().captions.forEach((caption, index) => {
-        const item = document.createElement("button");
-        item.className = "video-card" + (index === state.captionIndex ? " active" : "");
-        item.type = "button";
-        item.style.gridTemplateColumns = "1fr 34px";
-        item.innerHTML = `<span>${caption.replaceAll("<mark>", "").replaceAll("</mark>", "")}</span><span>›</span>`;
-        item.addEventListener("click", () => {
-          state.captionIndex = index;
-          $("#caption").innerHTML = caption;
-          renderCaptions();
-        });
-        root.appendChild(item);
-      });
-    }
-
-    function renderSaved() {
-      $("#savedCount").textContent = String(state.savedVideos.length + state.savedWords.length);
-      const videos = $("#savedVideos");
-      const words = $("#savedWords");
-      videos.innerHTML = state.savedVideos.length ? "" : `<div class="saved-item"><span>저장된 영상이 없습니다.</span></div>`;
-      words.innerHTML = state.savedWords.length ? "" : `<div class="saved-item"><span>저장된 단어가 없습니다.</span></div>`;
-      state.savedVideos.forEach(item => {
-        const row = document.createElement("div");
-        row.className = "saved-item";
-        row.innerHTML = `<strong>${item.title}</strong><span>${item.language} · ${new Date(item.updated_at).toLocaleString()}</span>`;
-        videos.appendChild(row);
-      });
-      state.savedWords.forEach(item => {
-        const row = document.createElement("div");
-        row.className = "saved-item";
-        row.innerHTML = `<strong>${item.word}</strong><span>${item.accent.toUpperCase()} · ${new Date(item.updated_at).toLocaleString()}</span>`;
-        words.appendChild(row);
-      });
-    }
-
-    function renderRecordings() {
-      $("#recordCount").textContent = String(state.recordings.length);
-      const root = $("#recordList");
-      root.innerHTML = state.recordings.length ? "" : `<div class="record-item"><span>아직 녹음이 없습니다.</span></div>`;
-      state.recordings.forEach(item => {
-        const row = document.createElement("div");
-        row.className = "record-item";
-        row.innerHTML = `<strong>${item.word}</strong><span>${item.duration}s · ${new Date(item.updated_at).toLocaleString()}</span><audio controls src="${item.url}"></audio>`;
         root.appendChild(row);
       });
     }
 
+    function renderSentenceList() {
+      const root = $("#captionList");
+      root.innerHTML = "";
+      currentVideo().sentences.forEach((sentence, index) => {
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "caption-item" + (index === state.sentence ? " active" : "");
+        row.innerHTML = sentence;
+        row.addEventListener("click", () => {
+          state.sentence = index;
+          $("#mainCaption").innerHTML = sentence;
+          renderSentenceList();
+        });
+        root.appendChild(row);
+      });
+    }
+
+    function emptyCard(text) {
+      return `<div class="card"><span>${text}</span></div>`;
+    }
+
+    function renderSaved() {
+      const activeVideos = state.savedVideos.filter(item => !item.deleted_at);
+      const activeWords = state.savedWords.filter(item => !item.deleted_at);
+      $("#savedTotal").textContent = String(activeVideos.length + activeWords.length);
+      $("#savedVideos").innerHTML = activeVideos.length ? "" : emptyCard("저장된 영상이 없습니다.");
+      $("#savedWords").innerHTML = activeWords.length ? "" : emptyCard("저장된 단어가 없습니다.");
+      activeVideos.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "card";
+        row.innerHTML = `<strong>${item.title}</strong><span>${item.video_id} · ${new Date(item.updated_at).toLocaleString()}</span><div class="row-actions"><button class="mini" data-open-video="${item.video_id}">열기</button><button class="mini" data-delete-video="${item.id}">삭제</button></div>`;
+        $("#savedVideos").appendChild(row);
+      });
+      activeWords.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "card";
+        row.innerHTML = `<strong>${item.word}</strong><span>${item.language} · ${item.accent}</span><div class="row-actions"><button class="mini" data-study-word="${item.id}">${item.learned ? "학습완료" : "미학습"}</button><button class="mini" data-delete-word="${item.id}">삭제</button></div>`;
+        $("#savedWords").appendChild(row);
+      });
+    }
+
+    function renderRecordings() {
+      const active = state.recordings.filter(item => !item.deleted_at);
+      $("#recordTotal").textContent = String(active.length);
+      $("#recordList").innerHTML = active.length ? "" : emptyCard("아직 녹음이 없습니다.");
+      active.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "card";
+        row.innerHTML = `<strong>${item.word}</strong><span>${item.duration}s · ${new Date(item.updated_at).toLocaleString()}</span><audio controls src="${item.local_url}"></audio><div class="row-actions"><button class="mini" data-delete-record="${item.id}">삭제</button></div>`;
+        $("#recordList").appendChild(row);
+      });
+    }
+
     function persist() {
-      store.set("pcl:savedVideos", state.savedVideos);
-      store.set("pcl:savedWords", state.savedWords);
-      store.set("pcl:recordings", state.recordings);
+      storage.set("pcl:savedVideos", state.savedVideos);
+      storage.set("pcl:savedWords", state.savedWords);
+      storage.set("pcl:recordings", state.recordings);
       renderSaved();
       renderRecordings();
     }
 
-    function performSearch() {
-      const q = $("#query").value.trim().toLowerCase() || "practice";
-      const lang = $("#language").value;
-      const accent = $("#accent").value;
-      const base = sampleVideos.filter(v => v.language === lang && (accent === "any" || v.accent === accent || v.accent === "any"));
-      state.videos = (base.length ? base : sampleVideos).map((video, index) => ({
-        ...video,
-        title: `${q.charAt(0).toUpperCase() + q.slice(1)} · clip ${index + 1}`,
-        captions: video.captions.map(line => line.replace(/comfortable|practice|sentence/gi, q))
-      }));
-      state.active = 0;
-      state.captionIndex = 0;
-      renderPlayer();
-      setStatus("검색 결과를 업데이트했습니다.");
+    function notice(text) {
+      $("#notice").textContent = text;
+      if (text) setTimeout(() => $("#notice").textContent = "", 3600);
     }
 
-    async function toggleRecording() {
-      if (state.mediaRecorder && state.mediaRecorder.state === "recording") {
-        state.mediaRecorder.stop();
+    function setSyncStatus(text) {
+      $("#syncStatus").textContent = text;
+    }
+
+    async function searchVideos() {
+      const word = cleanWord();
+      const endpoint = state.settings.searchEndpoint;
+      let items = [];
+
+      if (endpoint) {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ q: word, language: $("#language").value, accent: $("#accent").value })
+        });
+        if (!res.ok) throw new Error(`검색 실패: ${res.status}`);
+        const data = await res.json();
+        items = data.items || [];
+      }
+
+      if (!items.length) {
+        items = fallbackVideos.map((video, index) => ({
+          ...video,
+          title: `${word} · sample ${index + 1}`
+        }));
+        notice(endpoint ? "검색 결과가 없어 샘플 영상을 표시했습니다." : "검색 함수 URL이 없어 샘플 영상을 표시했습니다.");
+      }
+
+      state.videos = items.map(item => ({ ...item, sentences: makeSentences(word) }));
+      state.active = 0;
+      state.sentence = 0;
+      renderPlayer();
+    }
+
+    function supabaseReady() {
+      return state.settings.supabaseUrl && state.settings.supabaseAnon && state.settings.userId;
+    }
+
+    async function supabaseFetch(path, options = {}) {
+      if (!supabaseReady()) throw new Error("Supabase 설정이 필요합니다.");
+      const base = state.settings.supabaseUrl.replace(/\/$/, "");
+      const headers = {
+        apikey: state.settings.supabaseAnon,
+        authorization: `Bearer ${state.settings.supabaseAnon}`,
+        "content-type": "application/json",
+        ...(options.headers || {})
+      };
+      const res = await fetch(`${base}/rest/v1/${path}`, { ...options, headers });
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new Error(`Supabase 오류 ${res.status}: ${body}`);
+      }
+      if (res.status === 204) return null;
+      return res.json();
+    }
+
+    const tables = [
+      { table: "app_saved_videos", key: "savedVideos" },
+      { table: "app_saved_words", key: "savedWords" },
+      { table: "app_recordings", key: "recordings" }
+    ];
+
+    function cloudRowsFor(key) {
+      return state[key].map(item => ({
+        ...item,
+        user_id: state.settings.userId,
+        local_url: key === "recordings" ? null : item.local_url
+      }));
+    }
+
+    function mergeLatest(localRows, cloudRows) {
+      const map = new Map();
+      [...localRows, ...cloudRows].forEach(row => {
+        const prev = map.get(row.id);
+        if (!prev || new Date(row.updated_at) > new Date(prev.updated_at)) map.set(row.id, row);
+      });
+      return [...map.values()].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+    }
+
+    async function getCanonicalVersion() {
+      const key = `canonical:${state.settings.userId}`;
+      const rows = await supabaseFetch(`language_sync_meta?key=eq.${encodeURIComponent(key)}&select=value`);
+      return rows[0]?.value || "0";
+    }
+
+    async function setCanonicalVersion(version) {
+      const key = `canonical:${state.settings.userId}`;
+      await supabaseFetch("language_sync_meta", {
+        method: "POST",
+        headers: { prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify([{ key, value: version, updated_at: now() }])
+      });
+    }
+
+    async function downloadCloudOnly() {
+      for (const cfg of tables) {
+        const rows = await supabaseFetch(`${cfg.table}?user_id=eq.${encodeURIComponent(state.settings.userId)}&select=*&order=updated_at.desc`);
+        state[cfg.key] = rows.map(row => {
+          const { user_id, ...rest } = row;
+          return rest;
+        });
+      }
+      storage.set("pcl:canonicalSeen", await getCanonicalVersion());
+      persist();
+    }
+
+    async function uploadAllLocal() {
+      for (const cfg of tables) {
+        const rows = cloudRowsFor(cfg.key);
+        if (!rows.length) continue;
+        await supabaseFetch(cfg.table, {
+          method: "POST",
+          headers: { prefer: "resolution=merge-duplicates,return=minimal" },
+          body: JSON.stringify(rows)
+        });
+      }
+    }
+
+    async function autoSync() {
+      const cloudVersion = await getCanonicalVersion();
+      const seenVersion = storage.get("pcl:canonicalSeen", "0");
+      if (cloudVersion !== seenVersion) {
+        await downloadCloudOnly();
+        setSyncStatus("최종본 버전 변경 감지: 클라우드 기준으로 로컬을 맞췄습니다.");
+        return;
+      }
+
+      for (const cfg of tables) {
+        const cloudRows = await supabaseFetch(`${cfg.table}?user_id=eq.${encodeURIComponent(state.settings.userId)}&select=*&order=updated_at.desc`);
+        const normalizedCloud = cloudRows.map(row => {
+          const { user_id, ...rest } = row;
+          return rest;
+        });
+        state[cfg.key] = mergeLatest(state[cfg.key], normalizedCloud);
+      }
+      persist();
+      await uploadAllLocal();
+      setSyncStatus("자동 병합 후 클라우드에도 반영했습니다.");
+    }
+
+    async function markThisDeviceCanonical() {
+      await uploadAllLocal();
+      const version = String(Date.now());
+      await setCanonicalVersion(version);
+      storage.set("pcl:canonicalSeen", version);
+      setSyncStatus(`이 기기를 최종본으로 지정했습니다. canonical_version=${version}`);
+    }
+
+    async function toggleRecord() {
+      if (state.recorder && state.recorder.state === "recording") {
+        state.recorder.stop();
         return;
       }
       if (!navigator.mediaDevices?.getUserMedia) {
-        setStatus("이 브라우저는 녹음을 지원하지 않습니다.");
+        notice("이 브라우저는 녹음을 지원하지 않습니다.");
         return;
       }
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         state.chunks = [];
-        state.mediaRecorder = new MediaRecorder(stream);
-        const started = Date.now();
-        state.mediaRecorder.ondataavailable = event => state.chunks.push(event.data);
-        state.mediaRecorder.onstop = () => {
+        state.startedAt = Date.now();
+        state.recorder = new MediaRecorder(stream);
+        state.recorder.ondataavailable = event => state.chunks.push(event.data);
+        state.recorder.onstop = () => {
           stream.getTracks().forEach(track => track.stop());
-          clearInterval(state.meterTimer);
-          $("#recordMeter").style.width = "0";
-          $("#recordBtn").textContent = "●";
+          $("#record").textContent = "●";
           const blob = new Blob(state.chunks, { type: "audio/webm" });
-          const url = URL.createObjectURL(blob);
-          state.recordings.unshift(recordMeta({
-            word: $("#query").value.trim() || "practice",
-            url,
-            duration: Math.max(1, Math.round((Date.now() - started) / 1000))
+          state.recordings.unshift(meta({
+            user_id: state.settings.userId || "local",
+            word: cleanWord(),
+            duration: Math.max(1, Math.round((Date.now() - state.startedAt) / 1000)),
+            local_url: URL.createObjectURL(blob),
+            audio_url: null
           }));
           persist();
-          setStatus("녹음을 저장했습니다.");
+          notice("녹음을 저장했습니다. 오디오는 현재 이 기기에 저장됩니다.");
         };
-        state.mediaRecorder.start();
-        $("#recordBtn").textContent = "■";
-        state.meterTimer = setInterval(() => {
-          const pct = 20 + Math.round(Math.random() * 80);
-          $("#recordMeter").style.width = `${pct}%`;
-        }, 180);
-        setStatus("녹음 중입니다.");
+        state.recorder.start();
+        $("#record").textContent = "■";
+        notice("녹음 중입니다.");
       } catch {
-        setStatus("마이크 권한이 필요합니다.");
+        notice("마이크 권한이 필요합니다.");
       }
+    }
+
+    function tombstone(collection, id) {
+      const item = state[collection].find(row => row.id === id);
+      if (!item) return;
+      item.deleted_at = now();
+      item.updated_at = now();
+      persist();
+    }
+
+    function loadSettingsToForm() {
+      if (!state.settings.userId) state.settings.userId = `device-${uid().slice(0, 8)}`;
+      $("#searchEndpoint").value = state.settings.searchEndpoint || "";
+      $("#supabaseUrl").value = state.settings.supabaseUrl || "";
+      $("#supabaseAnon").value = state.settings.supabaseAnon || "";
+      $("#userId").value = state.settings.userId || "";
+      $("#guestName").textContent = state.settings.userId ? state.settings.userId.slice(0, 10) : "Guest";
     }
 
     $$(".nav button").forEach(button => {
       button.addEventListener("click", () => {
         $$(".nav button").forEach(item => item.classList.remove("active"));
-        $$(".tab-page").forEach(page => page.classList.remove("active"));
+        $$(".page").forEach(page => page.classList.remove("active"));
         button.classList.add("active");
-        $(`#${button.dataset.tab}`).classList.add("active");
+        $("#" + button.dataset.page).classList.add("active");
       });
     });
 
-    $("#searchForm").addEventListener("submit", event => {
+    $("#searchForm").addEventListener("submit", async event => {
       event.preventDefault();
-      performSearch();
+      try { await searchVideos(); }
+      catch (error) { notice(error.message); }
     });
-
-    $("#prevBtn").addEventListener("click", () => {
+    $("#prev").addEventListener("click", () => {
       state.active = (state.active - 1 + state.videos.length) % state.videos.length;
-      state.captionIndex = 0;
+      state.sentence = 0;
       renderPlayer();
     });
-    $("#nextBtn").addEventListener("click", () => {
+    $("#next").addEventListener("click", () => {
       state.active = (state.active + 1) % state.videos.length;
-      state.captionIndex = 0;
+      state.sentence = 0;
       renderPlayer();
     });
-    $("#rewindBtn").addEventListener("click", () => setStatus("5초 되감기"));
-    $("#forwardBtn").addEventListener("click", () => setStatus("5초 앞으로"));
-    $("#playBtn").addEventListener("click", () => setStatus("YouTube iframe에서 재생을 제어합니다."));
-    $("#recordBtn").addEventListener("click", toggleRecording);
-    $("#saveVideoBtn").addEventListener("click", () => {
-      const video = activeVideo();
-      const existing = state.savedVideos.find(item => item.videoId === video.id);
-      if (existing) existing.updated_at = now();
-      else state.savedVideos.unshift(recordMeta({ videoId: video.id, title: video.title, language: $("#language").value }));
-      persist();
-      setStatus("영상을 저장했습니다.");
+    $("#nextCaption").addEventListener("click", () => {
+      state.sentence = (state.sentence + 1) % currentVideo().sentences.length;
+      $("#mainCaption").innerHTML = currentVideo().sentences[state.sentence];
+      renderSentenceList();
     });
-    $("#saveWordBtn").addEventListener("click", () => {
-      const word = $("#query").value.trim() || "practice";
+    $("#back").addEventListener("click", () => notice("YouTube iframe 제어는 다음 단계에서 Player API로 연결하면 됩니다."));
+    $("#playHint").addEventListener("click", () => notice("영상 안의 YouTube 재생 버튼을 눌러 재생하세요."));
+    $("#record").addEventListener("click", toggleRecord);
+    $("#saveVideo").addEventListener("click", () => {
+      const video = currentVideo();
+      const existing = state.savedVideos.find(item => item.video_id === video.videoId);
+      if (existing) {
+        existing.updated_at = now();
+        existing.deleted_at = null;
+      } else {
+        state.savedVideos.unshift(meta({
+          user_id: state.settings.userId || "local",
+          video_id: video.videoId,
+          title: video.title,
+          channel: video.channel || "YouTube",
+          thumbnail: video.thumbnail || null,
+          search_word: cleanWord(),
+          language: $("#language").value,
+          accent: $("#accent").value
+        }));
+      }
+      persist();
+      notice("영상을 저장했습니다.");
+    });
+    $("#saveWord").addEventListener("click", () => {
+      const word = cleanWord();
       const existing = state.savedWords.find(item => item.word.toLowerCase() === word.toLowerCase());
-      if (existing) existing.updated_at = now();
-      else state.savedWords.unshift(recordMeta({ word, accent: $("#accent").value, language: $("#language").value, learned: false }));
+      if (existing) {
+        existing.updated_at = now();
+        existing.deleted_at = null;
+      } else {
+        state.savedWords.unshift(meta({
+          user_id: state.settings.userId || "local",
+          word,
+          language: $("#language").value,
+          accent: $("#accent").value,
+          learned: false,
+          note: ""
+        }));
+      }
       persist();
-      setStatus("단어를 저장했습니다.");
+      notice("단어를 저장했습니다.");
     });
-    $("#defineBtn").addEventListener("click", () => setStatus("정의 API 연결 지점입니다."));
-    $("#shareBtn").addEventListener("click", async () => {
-      const url = `https://www.youtube.com/watch?v=${activeVideo().id}`;
-      if (navigator.share) await navigator.share({ title: activeVideo().title, url });
+    $("#define").addEventListener("click", () => {
+      const word = cleanWord();
+      const note = prompt(`${word} 메모`, "");
+      if (note === null) return;
+      const existing = state.savedWords.find(item => item.word.toLowerCase() === word.toLowerCase());
+      if (existing) {
+        existing.note = note;
+        existing.updated_at = now();
+      } else {
+        state.savedWords.unshift(meta({ user_id: state.settings.userId || "local", word, language: $("#language").value, accent: $("#accent").value, learned: false, note }));
+      }
+      persist();
+    });
+    $("#share").addEventListener("click", async () => {
+      const url = `https://www.youtube.com/watch?v=${currentVideo().videoId}`;
+      if (navigator.share) await navigator.share({ title: currentVideo().title, url });
       else await navigator.clipboard?.writeText(url);
-      setStatus("링크를 준비했습니다.");
+      notice("링크를 준비했습니다.");
     });
-    $("#testSyncBtn").addEventListener("click", () => {
-      const mode = $("#syncMode").value;
-      const version = `${Date.now()}`;
-      const payload = {
-        canonical_version: mode === "canonical" ? version : store.get("pcl:canonicalVersion", "local"),
-        checked_at: now(),
-        mode
+    document.addEventListener("click", event => {
+      const target = event.target;
+      if (target.dataset.deleteVideo) tombstone("savedVideos", target.dataset.deleteVideo);
+      if (target.dataset.deleteWord) tombstone("savedWords", target.dataset.deleteWord);
+      if (target.dataset.deleteRecord) tombstone("recordings", target.dataset.deleteRecord);
+      if (target.dataset.studyWord) {
+        const item = state.savedWords.find(row => row.id === target.dataset.studyWord);
+        if (item) {
+          item.learned = !item.learned;
+          item.updated_at = now();
+          persist();
+        }
+      }
+      if (target.dataset.openVideo) {
+        state.videos = [{ videoId: target.dataset.openVideo, title: "Saved video", channel: "YouTube", thumbnail: `https://img.youtube.com/vi/${target.dataset.openVideo}/mqdefault.jpg`, sentences: makeSentences(cleanWord()) }];
+        state.active = 0;
+        state.sentence = 0;
+        renderPlayer();
+        $("[data-page='practice']").click();
+      }
+    });
+    $("#saveSettings").addEventListener("click", () => {
+      state.settings = {
+        searchEndpoint: $("#searchEndpoint").value.trim(),
+        supabaseUrl: $("#supabaseUrl").value.trim(),
+        supabaseAnon: $("#supabaseAnon").value.trim(),
+        userId: $("#userId").value.trim() || `device-${uid().slice(0, 8)}`
       };
-      if (mode === "canonical") store.set("pcl:canonicalVersion", version);
-      store.set("pcl:lastSync", payload);
-      $("#syncStatus").textContent = mode === "canonical"
-        ? "최종본 버전을 갱신하고 즉시 동기화를 실행했습니다."
-        : "연결 확인 후 즉시 동기화를 실행했습니다.";
+      storage.set("pcl:settings", state.settings);
+      loadSettingsToForm();
+      $("#settingsStatus").textContent = "설정을 저장했습니다.";
+    });
+    $("#syncAuto").addEventListener("click", async () => {
+      try { await autoSync(); }
+      catch (error) { setSyncStatus(error.message); }
+    });
+    $("#syncCanonical").addEventListener("click", async () => {
+      try { await markThisDeviceCanonical(); }
+      catch (error) { setSyncStatus(error.message); }
+    });
+    $("#syncCloud").addEventListener("click", async () => {
+      try {
+        await downloadCloudOnly();
+        setSyncStatus("클라우드 기준으로 로컬을 반영했습니다.");
+      } catch (error) {
+        setSyncStatus(error.message);
+      }
     });
 
-    renderPlayer();
+    loadSettingsToForm();
+    searchVideos();
     renderSaved();
     renderRecordings();
   </script>
