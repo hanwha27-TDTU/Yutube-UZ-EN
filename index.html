@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pronounce Clip Lab</title>
+  <style>
+    :root {
+      --bg: #f6f7f8;
+      --panel: #ffffff;
+      --ink: #171717;
+      --muted: #667085;
+      --line: #dfe3e8;
+      --green: #00a878;
+      --green-dark: #047857;
+      --coral: #ff6b57;
+      --yellow: #f5c84b;
+      --blue: #3478f6;
+      --shadow: 0 14px 38px rgba(30, 41, 59, .12);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, #ffffff 0, var(--bg) 320px),
+        var(--bg);
+    }
+
+    button, input, select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease;
+    }
+
+    button:active { transform: translateY(1px); }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 3px solid rgba(52, 120, 246, .25);
+      outline-offset: 2px;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 22px 18px;
+      border-right: 1px solid var(--line);
+      background: rgba(255, 255, 255, .86);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 26px;
+    }
+
+    .mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: conic-gradient(from 210deg, var(--green), var(--blue), var(--coral), var(--green));
+      font-weight: 800;
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    .brand span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav button {
+      min-height: 44px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      border-radius: 8px;
+      color: var(--muted);
+      background: transparent;
+      text-align: left;
+    }
+
+    .nav button.active {
+      color: var(--ink);
+      background: #eefaf5;
+      box-shadow: inset 3px 0 0 var(--green);
+    }
+
+    .sync-note {
+      margin-top: 26px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .sync-note strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .sync-note code {
+      display: block;
+      white-space: pre-wrap;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .main {
+      min-width: 0;
+      padding: 28px clamp(18px, 4vw, 44px) 42px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 3vw, 38px);
+      letter-spacing: 0;
+      line-height: 1.12;
+    }
+
+    .account-pill {
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--muted);
+      box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    }
+
+    .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: var(--coral);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .search-band {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 168px 168px 52px;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .field, .select {
+      height: 52px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--ink);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, .05);
+    }
+
+    .field {
+      padding: 0 16px;
+      font-size: 17px;
+    }
+
+    .select {
+      padding: 0 12px;
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+      background-position: calc(100% - 18px) 22px, calc(100% - 13px) 22px;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+    }
+
+    .icon-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: var(--green);
+      color: #fff;
+      font-size: 20px;
+      box-shadow: 0 12px 28px rgba(0, 168, 120, .26);
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(300px, .85fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .player-zone {
+      display: grid;
+      gap: 14px;
+    }
+
+    .player-shell {
+      overflow: hidden;
+      border-radius: 8px;
+      background: #0e1116;
+      box-shadow: var(--shadow);
+    }
+
+    .video-frame {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border: 0;
+      display: block;
+    }
+
+    .transport {
+      min-height: 64px;
+      display: grid;
+      grid-template-columns: repeat(6, 48px) 1fr 88px;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      border-top: 1px solid rgba(255, 255, 255, .08);
+      background: #141922;
+    }
+
+    .transport button {
+      width: 48px;
+      height: 42px;
+      border-radius: 8px;
+      background: #232a36;
+      color: #fff;
+      font-size: 18px;
+    }
+
+    .speed {
+      justify-self: end;
+      min-width: 82px;
+      height: 42px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, .12);
+      color: #fff;
+      background: #232a36;
+    }
+
+    .caption-strip {
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      font-size: 18px;
+      line-height: 1.45;
+    }
+
+    .caption-strip mark {
+      padding: 0 3px;
+      border-radius: 4px;
+      background: rgba(245, 200, 75, .55);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tool-btn {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      background: var(--panel);
+    }
+
+    .tool-btn.primary {
+      color: #fff;
+      border-color: var(--green);
+      background: var(--green);
+    }
+
+    .side-stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 8px 22px rgba(15, 23, 42, .05);
+    }
+
+    .panel h2 {
+      margin: 0;
+      padding: 14px 14px 10px;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .result-list, .saved-list, .record-list {
+      display: grid;
+      gap: 8px;
+      padding: 0 10px 10px;
+    }
+
+    .video-card {
+      display: grid;
+      grid-template-columns: 96px minmax(0, 1fr) 36px;
+      gap: 10px;
+      align-items: center;
+      padding: 8px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+
+    .video-card.active {
+      border-color: rgba(0, 168, 120, .35);
+      background: #effaf6;
+    }
+
+    .thumb {
+      width: 96px;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      border-radius: 6px;
+      background: #111827;
+    }
+
+    .video-card strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    .video-card span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tiny-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      color: var(--muted);
+      background: transparent;
+      font-size: 18px;
+    }
+
+    .tiny-icon.saved {
+      color: #fff;
+      background: var(--coral);
+    }
+
+    .tab-page { display: none; }
+    .tab-page.active { display: block; }
+
+    .page-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .saved-item, .record-item {
+      display: grid;
+      gap: 7px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+
+    .saved-item strong, .record-item strong { font-size: 14px; }
+    .saved-item span, .record-item span { color: var(--muted); font-size: 12px; }
+
+    .settings-grid {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .setting-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .setting-row label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .setting-row input, .setting-row select {
+      height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 12px;
+      background: #fff;
+    }
+
+    .status {
+      min-height: 24px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .meter {
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #e9edf2;
+    }
+
+    .meter span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--green), var(--coral));
+      transition: width .2s ease;
+    }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar {
+        position: fixed;
+        z-index: 20;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        height: 68px;
+        padding: 8px;
+        border-right: 0;
+        border-top: 1px solid var(--line);
+      }
+      .brand, .sync-note { display: none; }
+      .nav {
+        grid-template-columns: repeat(4, 1fr);
+        height: 100%;
+      }
+      .nav button {
+        min-height: 52px;
+        grid-template-columns: 1fr;
+        justify-items: center;
+        gap: 2px;
+        padding: 4px;
+        font-size: 11px;
+        text-align: center;
+      }
+      .nav button.active { box-shadow: inset 0 3px 0 var(--green); }
+      .main { padding-bottom: 92px; }
+      .content, .page-grid { grid-template-columns: 1fr; }
+      .search-band { grid-template-columns: 1fr 1fr 52px; }
+      .search-band .field { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 560px) {
+      .main { padding: 18px 12px 92px; }
+      .topbar { align-items: flex-start; }
+      .account-pill { max-width: 118px; }
+      .account-pill span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .search-band { grid-template-columns: 1fr 52px; }
+      .search-band .select { grid-column: span 1; }
+      .transport {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .transport button, .speed { width: 100%; min-width: 0; }
+      .video-card { grid-template-columns: 86px minmax(0, 1fr) 34px; }
+      .thumb { width: 86px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="mark">P</div>
+        <div>
+          <strong>Pronounce Clip Lab</strong>
+          <span>HTML prototype</span>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Main">
+        <button class="active" data-tab="practice" title="연습"><span>⌕</span><span>연습</span></button>
+        <button data-tab="saved" title="저장"><span>★</span><span>저장</span></button>
+        <button data-tab="recordings" title="녹음"><span>●</span><span>녹음</span></button>
+        <button data-tab="settings" title="설정"><span>⚙</span><span>설정</span></button>
+      </nav>
+      <div class="sync-note">
+        <strong>Sync model</strong>
+        <code>id
+created_at
+updated_at
+deleted_at
+canonical_version</code>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="tab-page active" id="practice">
+        <div class="topbar">
+          <h1>오늘 어떤 발음을 연습할까요?</h1>
+          <div class="account-pill"><span class="avatar">G</span><span>Guest</span></div>
+        </div>
+
+        <form class="search-band" id="searchForm">
+          <input class="field" id="query" value="comfortable" autocomplete="off" aria-label="검색어">
+          <select class="select" id="language" aria-label="언어">
+            <option value="english">English</option>
+            <option value="french">French</option>
+            <option value="spanish">Spanish</option>
+            <option value="german">German</option>
+          </select>
+          <select class="select" id="accent" aria-label="악센트">
+            <option value="us">US</option>
+            <option value="uk">UK</option>
+            <option value="au">AU</option>
+            <option value="any">Any</option>
+          </select>
+          <button class="icon-btn" title="검색">⌕</button>
+        </form>
+
+        <div class="content">
+          <div class="player-zone">
+            <div class="player-shell">
+              <iframe class="video-frame" id="player" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+              <div class="transport">
+                <button type="button" id="prevBtn" title="이전">‹</button>
+                <button type="button" id="rewindBtn" title="되감기">↺</button>
+                <button type="button" id="playBtn" title="재생">▶</button>
+                <button type="button" id="forwardBtn" title="앞으로">↻</button>
+                <button type="button" id="nextBtn" title="다음">›</button>
+                <button type="button" id="recordBtn" title="녹음">●</button>
+                <div class="meter" aria-hidden="true"><span id="recordMeter"></span></div>
+                <select class="speed" id="speed" aria-label="속도">
+                  <option>0.75x</option>
+                  <option selected>1x</option>
+                  <option>1.25x</option>
+                  <option>1.5x</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="caption-strip" id="caption"></div>
+            <div class="actions">
+              <button class="tool-btn primary" id="saveVideoBtn" type="button"><span>★</span><span>영상 저장</span></button>
+              <button class="tool-btn" id="saveWordBtn" type="button"><span>＋</span><span>단어 저장</span></button>
+              <button class="tool-btn" id="defineBtn" type="button"><span>≡</span><span>뜻 보기</span></button>
+              <button class="tool-btn" id="shareBtn" type="button"><span>↗</span><span>공유</span></button>
+            </div>
+            <div class="status" id="status"></div>
+          </div>
+
+          <div class="side-stack">
+            <section class="panel">
+              <h2>영상</h2>
+              <div class="result-list" id="results"></div>
+            </section>
+            <section class="panel">
+              <h2>자막</h2>
+              <div class="result-list" id="captions"></div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-page" id="saved">
+        <div class="topbar">
+          <h1>저장한 항목</h1>
+          <div class="account-pill"><span class="avatar">S</span><span id="savedCount">0</span></div>
+        </div>
+        <div class="page-grid">
+          <section class="panel">
+            <h2>영상</h2>
+            <div class="saved-list" id="savedVideos"></div>
+          </section>
+          <section class="panel">
+            <h2>단어</h2>
+            <div class="saved-list" id="savedWords"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-page" id="recordings">
+        <div class="topbar">
+          <h1>녹음 연습</h1>
+          <div class="account-pill"><span class="avatar">R</span><span id="recordCount">0</span></div>
+        </div>
+        <section class="panel">
+          <h2>내 녹음</h2>
+          <div class="record-list" id="recordList"></div>
+        </section>
+      </section>
+
+      <section class="tab-page" id="settings">
+        <div class="topbar">
+          <h1>설정</h1>
+          <div class="account-pill"><span class="avatar">A</span><span>Local</span></div>
+        </div>
+        <section class="panel">
+          <h2>연결</h2>
+          <div class="settings-grid">
+            <div class="setting-row">
+              <label for="apiBase">API base</label>
+              <input id="apiBase" placeholder="https://example.com/api">
+            </div>
+            <div class="setting-row">
+              <label for="token">Token</label>
+              <input id="token" type="password" placeholder="optional">
+            </div>
+            <div class="setting-row">
+              <label for="syncMode">Sync mode</label>
+              <select id="syncMode">
+                <option value="merge">자동 병합</option>
+                <option value="canonical">이 기기를 최종본으로 지정</option>
+                <option value="cloud">클라우드 기준 반영</option>
+              </select>
+            </div>
+            <button class="tool-btn primary" id="testSyncBtn" type="button"><span>↕</span><span>연결 테스트</span></button>
+            <div class="status" id="syncStatus"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const now = () => new Date().toISOString();
+    const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+    const store = {
+      get(key, fallback) {
+        try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
+        catch { return fallback; }
+      },
+      set(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+    };
+
+    const sampleVideos = [
+      {
+        id: "ysz5S6PUM-U",
+        title: "Comfortable conversation example",
+        channel: "Learning clip",
+        accent: "us",
+        language: "english",
+        captions: [
+          "It is more <mark>comfortable</mark> when you practice in short clips.",
+          "Try saying the sentence slowly, then repeat it at normal speed.",
+          "Small pronunciation details become easier when you hear them in context."
+        ]
+      },
+      {
+        id: "2vjPBrBU-TM",
+        title: "Everyday phrase practice",
+        channel: "Native speech",
+        accent: "uk",
+        language: "english",
+        captions: [
+          "The rhythm of a sentence often matters as much as a single word.",
+          "Listen once for meaning, then again for stress and timing.",
+          "Save useful clips so you can compare your recording later."
+        ]
+      },
+      {
+        id: "M7lc1UVf-VE",
+        title: "Clear speech sample",
+        channel: "Reference clip",
+        accent: "any",
+        language: "english",
+        captions: [
+          "Search results can be connected to a real backend when an API is ready.",
+          "The player, captions, saved words, and recorder are already wired locally.",
+          "Use canonical sync when one device must become the final source."
+        ]
+      }
+    ];
+
+    const state = {
+      videos: sampleVideos,
+      active: 0,
+      captionIndex: 0,
+      savedVideos: store.get("pcl:savedVideos", []),
+      savedWords: store.get("pcl:savedWords", []),
+      recordings: store.get("pcl:recordings", []),
+      mediaRecorder: null,
+      chunks: [],
+      meterTimer: null
+    };
+
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => [...document.querySelectorAll(selector)];
+
+    function recordMeta(data) {
+      return { id: uid(), created_at: now(), updated_at: now(), deleted_at: null, ...data };
+    }
+
+    function setStatus(text) {
+      $("#status").textContent = text;
+      if (text) setTimeout(() => $("#status").textContent = "", 2500);
+    }
+
+    function activeVideo() {
+      return state.videos[state.active] || sampleVideos[0];
+    }
+
+    function renderPlayer() {
+      const video = activeVideo();
+      const origin = location.origin === "null" ? "http://localhost" : location.origin;
+      $("#player").src = `https://www.youtube.com/embed/${video.id}?enablejsapi=1&rel=0&origin=${encodeURIComponent(origin)}`;
+      $("#caption").innerHTML = video.captions[state.captionIndex] || "";
+      renderResults();
+      renderCaptions();
+    }
+
+    function renderResults() {
+      const root = $("#results");
+      root.innerHTML = "";
+      state.videos.forEach((video, index) => {
+        const item = document.createElement("div");
+        item.className = "video-card" + (index === state.active ? " active" : "");
+        item.innerHTML = `
+          <img class="thumb" src="https://img.youtube.com/vi/${video.id}/mqdefault.jpg" alt="">
+          <button type="button" class="tiny-icon" title="재생">▶</button>
+        `;
+        const text = document.createElement("div");
+        text.innerHTML = `<strong>${video.title}</strong><span>${video.channel} · ${video.accent.toUpperCase()}</span>`;
+        item.insertBefore(text, item.children[1]);
+        item.addEventListener("click", () => {
+          state.active = index;
+          state.captionIndex = 0;
+          renderPlayer();
+        });
+        root.appendChild(item);
+      });
+    }
+
+    function renderCaptions() {
+      const root = $("#captions");
+      root.innerHTML = "";
+      activeVideo().captions.forEach((caption, index) => {
+        const item = document.createElement("button");
+        item.className = "video-card" + (index === state.captionIndex ? " active" : "");
+        item.type = "button";
+        item.style.gridTemplateColumns = "1fr 34px";
+        item.innerHTML = `<span>${caption.replaceAll("<mark>", "").replaceAll("</mark>", "")}</span><span>›</span>`;
+        item.addEventListener("click", () => {
+          state.captionIndex = index;
+          $("#caption").innerHTML = caption;
+          renderCaptions();
+        });
+        root.appendChild(item);
+      });
+    }
+
+    function renderSaved() {
+      $("#savedCount").textContent = String(state.savedVideos.length + state.savedWords.length);
+      const videos = $("#savedVideos");
+      const words = $("#savedWords");
+      videos.innerHTML = state.savedVideos.length ? "" : `<div class="saved-item"><span>저장된 영상이 없습니다.</span></div>`;
+      words.innerHTML = state.savedWords.length ? "" : `<div class="saved-item"><span>저장된 단어가 없습니다.</span></div>`;
+      state.savedVideos.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "saved-item";
+        row.innerHTML = `<strong>${item.title}</strong><span>${item.language} · ${new Date(item.updated_at).toLocaleString()}</span>`;
+        videos.appendChild(row);
+      });
+      state.savedWords.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "saved-item";
+        row.innerHTML = `<strong>${item.word}</strong><span>${item.accent.toUpperCase()} · ${new Date(item.updated_at).toLocaleString()}</span>`;
+        words.appendChild(row);
+      });
+    }
+
+    function renderRecordings() {
+      $("#recordCount").textContent = String(state.recordings.length);
+      const root = $("#recordList");
+      root.innerHTML = state.recordings.length ? "" : `<div class="record-item"><span>아직 녹음이 없습니다.</span></div>`;
+      state.recordings.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "record-item";
+        row.innerHTML = `<strong>${item.word}</strong><span>${item.duration}s · ${new Date(item.updated_at).toLocaleString()}</span><audio controls src="${item.url}"></audio>`;
+        root.appendChild(row);
+      });
+    }
+
+    function persist() {
+      store.set("pcl:savedVideos", state.savedVideos);
+      store.set("pcl:savedWords", state.savedWords);
+      store.set("pcl:recordings", state.recordings);
+      renderSaved();
+      renderRecordings();
+    }
+
+    function performSearch() {
+      const q = $("#query").value.trim().toLowerCase() || "practice";
+      const lang = $("#language").value;
+      const accent = $("#accent").value;
+      const base = sampleVideos.filter(v => v.language === lang && (accent === "any" || v.accent === accent || v.accent === "any"));
+      state.videos = (base.length ? base : sampleVideos).map((video, index) => ({
+        ...video,
+        title: `${q.charAt(0).toUpperCase() + q.slice(1)} · clip ${index + 1}`,
+        captions: video.captions.map(line => line.replace(/comfortable|practice|sentence/gi, q))
+      }));
+      state.active = 0;
+      state.captionIndex = 0;
+      renderPlayer();
+      setStatus("검색 결과를 업데이트했습니다.");
+    }
+
+    async function toggleRecording() {
+      if (state.mediaRecorder && state.mediaRecorder.state === "recording") {
+        state.mediaRecorder.stop();
+        return;
+      }
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setStatus("이 브라우저는 녹음을 지원하지 않습니다.");
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        state.chunks = [];
+        state.mediaRecorder = new MediaRecorder(stream);
+        const started = Date.now();
+        state.mediaRecorder.ondataavailable = event => state.chunks.push(event.data);
+        state.mediaRecorder.onstop = () => {
+          stream.getTracks().forEach(track => track.stop());
+          clearInterval(state.meterTimer);
+          $("#recordMeter").style.width = "0";
+          $("#recordBtn").textContent = "●";
+          const blob = new Blob(state.chunks, { type: "audio/webm" });
+          const url = URL.createObjectURL(blob);
+          state.recordings.unshift(recordMeta({
+            word: $("#query").value.trim() || "practice",
+            url,
+            duration: Math.max(1, Math.round((Date.now() - started) / 1000))
+          }));
+          persist();
+          setStatus("녹음을 저장했습니다.");
+        };
+        state.mediaRecorder.start();
+        $("#recordBtn").textContent = "■";
+        state.meterTimer = setInterval(() => {
+          const pct = 20 + Math.round(Math.random() * 80);
+          $("#recordMeter").style.width = `${pct}%`;
+        }, 180);
+        setStatus("녹음 중입니다.");
+      } catch {
+        setStatus("마이크 권한이 필요합니다.");
+      }
+    }
+
+    $$(".nav button").forEach(button => {
+      button.addEventListener("click", () => {
+        $$(".nav button").forEach(item => item.classList.remove("active"));
+        $$(".tab-page").forEach(page => page.classList.remove("active"));
+        button.classList.add("active");
+        $(`#${button.dataset.tab}`).classList.add("active");
+      });
+    });
+
+    $("#searchForm").addEventListener("submit", event => {
+      event.preventDefault();
+      performSearch();
+    });
+
+    $("#prevBtn").addEventListener("click", () => {
+      state.active = (state.active - 1 + state.videos.length) % state.videos.length;
+      state.captionIndex = 0;
+      renderPlayer();
+    });
+    $("#nextBtn").addEventListener("click", () => {
+      state.active = (state.active + 1) % state.videos.length;
+      state.captionIndex = 0;
+      renderPlayer();
+    });
+    $("#rewindBtn").addEventListener("click", () => setStatus("5초 되감기"));
+    $("#forwardBtn").addEventListener("click", () => setStatus("5초 앞으로"));
+    $("#playBtn").addEventListener("click", () => setStatus("YouTube iframe에서 재생을 제어합니다."));
+    $("#recordBtn").addEventListener("click", toggleRecording);
+    $("#saveVideoBtn").addEventListener("click", () => {
+      const video = activeVideo();
+      const existing = state.savedVideos.find(item => item.videoId === video.id);
+      if (existing) existing.updated_at = now();
+      else state.savedVideos.unshift(recordMeta({ videoId: video.id, title: video.title, language: $("#language").value }));
+      persist();
+      setStatus("영상을 저장했습니다.");
+    });
+    $("#saveWordBtn").addEventListener("click", () => {
+      const word = $("#query").value.trim() || "practice";
+      const existing = state.savedWords.find(item => item.word.toLowerCase() === word.toLowerCase());
+      if (existing) existing.updated_at = now();
+      else state.savedWords.unshift(recordMeta({ word, accent: $("#accent").value, language: $("#language").value, learned: false }));
+      persist();
+      setStatus("단어를 저장했습니다.");
+    });
+    $("#defineBtn").addEventListener("click", () => setStatus("정의 API 연결 지점입니다."));
+    $("#shareBtn").addEventListener("click", async () => {
+      const url = `https://www.youtube.com/watch?v=${activeVideo().id}`;
+      if (navigator.share) await navigator.share({ title: activeVideo().title, url });
+      else await navigator.clipboard?.writeText(url);
+      setStatus("링크를 준비했습니다.");
+    });
+    $("#testSyncBtn").addEventListener("click", () => {
+      const mode = $("#syncMode").value;
+      const version = `${Date.now()}`;
+      const payload = {
+        canonical_version: mode === "canonical" ? version : store.get("pcl:canonicalVersion", "local"),
+        checked_at: now(),
+        mode
+      };
+      if (mode === "canonical") store.set("pcl:canonicalVersion", version);
+      store.set("pcl:lastSync", payload);
+      $("#syncStatus").textContent = mode === "canonical"
+        ? "최종본 버전을 갱신하고 즉시 동기화를 실행했습니다."
+        : "연결 확인 후 즉시 동기화를 실행했습니다.";
+    });
+
+    renderPlayer();
+    renderSaved();
+    renderRecordings();
+  </script>
+</body>
+</html>
