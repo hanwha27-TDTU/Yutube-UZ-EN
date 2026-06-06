@@ -44,13 +44,18 @@ header{padding:28px 0 20px;display:flex;align-items:baseline;gap:16px}
 .ldot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .hint{margin-top:10px;padding:10px 14px;background:#131320;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);line-height:1.7}
+.quota-bar{margin-top:6px;padding:8px 14px;background:#131320;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:10px}
+.quota-track{flex:1;height:5px;background:var(--border);border-radius:99px;overflow:hidden;min-width:80px}
+.quota-fill{height:100%;border-radius:99px;transition:width .4s;background:var(--accent)}
+.quota-fill.warn{background:var(--accent2)}
+.quota-fill.danger{background:var(--red)}
+.quota-lbl{font-family:'DM Mono',monospace;font-size:11px;white-space:nowrap}
 .rcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;max-height:calc(100vh - 180px);display:flex;flex-direction:column}
 .rhead{padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .rtitle{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px}
 .rcnt{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);background:var(--surface2);padding:3px 10px;border-radius:99px}
 .rlist{overflow-y:auto;flex:1;padding:10px;display:flex;flex-direction:column;gap:4px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
-.vid-group{margin-top:8px}
-.vid-group:first-child{margin-top:0}
+.vid-group{margin-top:8px}.vid-group:first-child{margin-top:0}
 .vid-header{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:4px;cursor:pointer;transition:border-color .15s}
 .vid-header:hover{border-color:#3a3a55}
 .vid-header.active-vid{border-color:var(--accent2);background:#1a1500}
@@ -105,7 +110,13 @@ header{padding:28px 0 20px;display:flex;align-items:baseline;gap:16px}
       </div>
       <div class="cdisplay" id="cdis"><span class="ph">검색어를 입력하고 SEARCH를 눌러 시작하세요.</span></div>
       <div class="lbanner" id="lb"><div class="ldot"></div>구간 반복 재생 중 — 반복 버튼을 다시 누르면 정지</div>
-      <div class="hint" id="hintBar">✅ <strong>토크쇼·뉴스 채널 우선 검색</strong> | 자막 확보된 채널 위주로 최대 50개 영상 분석</div>
+      <div class="hint">✅ <strong>토크쇼·뉴스 위주 검색</strong> | 단어 검색 1회 = 200유닛 소비</div>
+      <div class="quota-bar">
+        <span class="quota-lbl">📊 오늘 쿼터</span>
+        <div class="quota-track"><div class="quota-fill" id="qFill" style="width:0%"></div></div>
+        <span class="quota-lbl" id="qText">0 / 10,000</span>
+        <span class="quota-lbl" id="qReset" style="color:var(--muted);font-size:10px"></span>
+      </div>
     </div>
     <div class="rcard">
       <div class="rhead"><span class="rtitle">RESULTS</span><span class="rcnt" id="rcnt">–</span></div>
@@ -121,44 +132,15 @@ var YT_KEY  = "AIzaSyCK7SlC5X2mEO8tQr0rI6lLOOFo_1-Svwo";
 var RA_KEY  = "43e4bbd8a9msh514bcb3ea6ba362p19196ajsn2052ebecf41e";
 var RA_HOST = "youtube-captions-transcript-subtitles-video-combiner.p.rapidapi.com";
 
-// ─── 언어별 검색 전략 ──────────────────────────────
-// 자막이 잘 붙어있는 채널/쿼리를 언어별로 정의
-// channelId 검색은 쿼터 절약 + 자막 확률 높음
-var LANG_CONFIG = {
-  "en": {
-    // 영어: 토크쇼·뉴스 채널 ID 직접 지정 (자막 100% 보장)
-    // 1순위: 채널별 검색 (자막 확실), 2순위: 일반 검색
-    channels: [
-      "UCVTyTA7KZpC4yvNo3OVGK6A", // Jimmy Fallon
-      "UCi7GJNg51C3jgmYTUwqoUXA", // Stephen Colbert
-      "UCJ0uqCI0Vqr2Rrt1HseGIHA", // Jimmy Kimmel
-      "UC7IcJI8PUf5Z3zKxnZvTBog", // The View
-      "UCHaHD477h-FeBbVh9Sh7syA", // CBS Mornings
-      "UCVqiGhPMrXOmrgLBB-JXEYA", // TED
-      "UCAuUUnT6oDeKwE6v1NGQxug", // BBC
-      "UCNye-wNBqNL5ZzHSJj3l8Bg"  // CNN
-    ],
-    fallbackQ: "" // 채널 검색 실패 시 일반 검색
-  },
-  "uz": {
-    channels: [],
-    fallbackQ: "o'zbek tilida muloqot suhbat yangiliklar"
-  },
-  "ko": {
-    channels: [
-      "UCddiUEpeqJcYeBxX1IVBKvQ", // 뉴스룸
-      "UC2d71a4y4JvOkgz5KpVAw0A"  // KBS뉴스
-    ],
-    fallbackQ: "뉴스 인터뷰 토크"
-  },
-  "ru": {
-    channels: [],
-    fallbackQ: "новости интервью ток-шоу"
-  },
-  "ar": {
-    channels: [],
-    fallbackQ: "أخبار مقابلة حوار"
-  }
+// ─── 언어별 검색 쿼리 보강 키워드 ──────────────────
+// 검색 API는 딱 2번만 호출 (일반 + 뉴스/토크 키워드)
+// 총 200유닛 소비 / 검색 1회
+var LANG_BOOST = {
+  "en": "interview OR \"talk show\" OR news",
+  "uz": "suhbat OR yangiliklar OR intervyu",
+  "ko": "인터뷰 OR 뉴스 OR 토크",
+  "ru": "интервью OR новости OR ток-шоу",
+  "ar": "مقابلة OR أخبار"
 };
 
 // ─── STATE ─────────────────────────────────────────
@@ -172,6 +154,38 @@ function onYouTubeIframeAPIReady(){
     playerVars:{rel:0,playsinline:1,cc_load_policy:0},
     events:{}
   });
+  updateQuotaUI();
+}
+
+// ─── 쿼터 관리 ─────────────────────────────────────
+function getQuota(){
+  var today=new Date().toISOString().slice(0,10);
+  try{
+    var d=JSON.parse(localStorage.getItem("cs_quota")||"{}");
+    if(d.date===today) return d.used||0;
+  }catch(e){}
+  return 0;
+}
+function addQuota(n){
+  var today=new Date().toISOString().slice(0,10);
+  var used=getQuota()+n;
+  try{localStorage.setItem("cs_quota",JSON.stringify({date:today,used:used}));}catch(e){}
+  updateQuotaUI(used);
+}
+function updateQuotaUI(used){
+  if(used===undefined) used=getQuota();
+  var pct=Math.min(100,Math.round(used/10000*100));
+  var fill=document.getElementById("qFill");
+  var text=document.getElementById("qText");
+  var reset=document.getElementById("qReset");
+  if(!fill) return;
+  fill.style.width=pct+"%";
+  fill.className="quota-fill"+(pct>=90?" danger":pct>=70?" warn":"");
+  text.textContent=used.toLocaleString()+" / 10,000 ("+pct+"%)";
+  text.style.color=pct>=90?"var(--red)":pct>=70?"var(--accent2)":"";
+  var h=new Date(); h.setHours(24,0,0,0);
+  var left=Math.round((h-new Date())/3600000*10)/10;
+  reset.textContent="⏱ "+left+"h 후 초기화";
 }
 
 // ─── 유틸 ──────────────────────────────────────────
@@ -188,72 +202,43 @@ function setSpin(on){document.getElementById("spin").classList.toggle("show",on)
 function setList(html){document.getElementById("rlist").innerHTML=html;}
 function smsg(ico,msg){return '<div class="smsg"><span class="big">'+ico+'</span>'+msg+'</div>';}
 
-// ─── YouTube API fetch 공통 ─────────────────────────
-async function ytSearch(params){
-  try{
-    var p=new URLSearchParams(Object.assign({
-      part:"id,snippet",type:"video",
-      videoCaption:"closedCaption",
-      maxResults:10,key:YT_KEY
-    },params));
-    var r=await fetch("https://www.googleapis.com/youtube/v3/search?"+p);
-    if(!r.ok) return [];
-    var d=await r.json();
-    return d.items||[];
-  }catch(e){return [];}
-}
-
-// ─── YouTube Search ─────────────────────────────────
-// 전략: 1순위 채널검색(자막확실) → 2순위 일반검색(토크/뉴스 키워드)
+// ─── YouTube Search (검색 딱 2회, 총 200유닛) ───────
 async function searchVids(q,lang){
-  var cfg=LANG_CONFIG[lang]||{channels:[],fallbackQ:""};
-  var allItems=[], seen={};
+  var boost=LANG_BOOST[lang]||"interview OR news";
+  var base={part:"id,snippet",type:"video",videoCaption:"closedCaption",
+            relevanceLanguage:lang,maxResults:25,key:YT_KEY};
 
-  function addItems(items){
-    items.forEach(function(item){
+  // 2개 쿼리 병렬 실행 (총 200유닛)
+  var reqs=await Promise.all([
+    // 1번: 단어 그대로 (관련 영상 넓게)
+    fetch("https://www.googleapis.com/youtube/v3/search?"+
+      new URLSearchParams(Object.assign({},base,{q:q}))),
+    // 2번: 단어 + 토크/뉴스 키워드 (구어체 영상 유도)
+    fetch("https://www.googleapis.com/youtube/v3/search?"+
+      new URLSearchParams(Object.assign({},base,{q:q+" "+boost})))
+  ]);
+
+  // 쿼터 카운팅 (성공한 요청 수 × 100)
+  var successCount=reqs.filter(function(r){return r.ok;}).length;
+  if(successCount>0) addQuota(successCount*100);
+
+  // 오류 체크 (첫 번째 요청 기준)
+  if(!reqs[0].ok){
+    var e=await reqs[0].json().catch(function(){return{};});
+    throw new Error((e.error&&e.error.message)||"YouTube API 오류 "+reqs[0].status);
+  }
+
+  // 결과 합산 + 중복 제거
+  var seen={}, allItems=[];
+  for(var i=0;i<reqs.length;i++){
+    if(!reqs[i].ok) continue;
+    var d=await reqs[i].json();
+    (d.items||[]).forEach(function(item){
       var vid=item.id&&item.id.videoId;
       if(!vid||seen[vid]) return;
       seen[vid]=true;
       allItems.push(item);
     });
-  }
-
-  // 1순위: 지정 채널에서 검색 (자막 확실한 채널)
-  if(cfg.channels.length){
-    var chFetches=cfg.channels.slice(0,6).map(function(chId){
-      return ytSearch({q:q, channelId:chId});
-    });
-    var chResults=await Promise.all(chFetches);
-    chResults.forEach(function(items){addItems(items);});
-  }
-
-  // 2순위: 토크쇼/인터뷰 키워드 일반 검색
-  var q2Items=await ytSearch({
-    q:q+" interview OR talk show OR news",
-    relevanceLanguage:lang,
-    maxResults:25
-  });
-  addItems(q2Items);
-
-  // 3순위: 언어별 fallback 키워드로 추가 검색
-  if(cfg.fallbackQ){
-    var q3Items=await ytSearch({
-      q:q+" "+cfg.fallbackQ,
-      relevanceLanguage:lang,
-      maxResults:15
-    });
-    addItems(q3Items);
-  }
-
-  // 4순위: 자막 여부 상관없이 순수 단어 검색 (마지막 보완)
-  if(allItems.length < 20){
-    var q4Items=await ytSearch({
-      q:q,
-      relevanceLanguage:lang,
-      videoCaption:"any",
-      maxResults:15
-    });
-    addItems(q4Items);
   }
 
   // 메타데이터 저장
@@ -336,6 +321,7 @@ async function doSearch(){
 
   setList(smsg("📄","영상 "+vids.length+"개에서 자막 분석 중…"));
 
+  // 병렬 자막 fetch
   var results=await Promise.all(vids.map(async function(vid){
     try{
       var caps=await fetchSub(vid,lang);
@@ -371,16 +357,15 @@ function renderResults(){
     if(!groups[c.videoId]){groups[c.videoId]=[];order.push(c.videoId);}
     groups[c.videoId].push({clip:c,idx:i});
   });
-  var curVid=clips[cur]?clips[cur].videoId:null;
   order.forEach(function(vid){
     var meta=vidMeta[vid]||{title:vid,thumb:""};
     var items=groups[vid];
-    var isActiveVid=(vid===curVid);
-    var group=document.createElement("div");
-    group.className="vid-group";
-    var header=document.createElement("div");
-    header.className="vid-header"+(isActiveVid?" active-vid":"");
-    header.innerHTML=
+    var isActive=(clips[cur]&&clips[cur].videoId===vid);
+    var grp=document.createElement("div");
+    grp.className="vid-group";
+    var hdr=document.createElement("div");
+    hdr.className="vid-header"+(isActive?" active-vid":"");
+    hdr.innerHTML=
       (meta.thumb?'<img class="vid-thumb" src="'+esc(meta.thumb)+'" alt="" loading="lazy">':
                   '<div class="vid-thumb"></div>')+
       '<div class="vid-info">'+
@@ -391,8 +376,8 @@ function renderResults(){
         '</div>'+
       '</div>'+
       '<span class="vid-badge">'+items.length+'</span>';
-    header.addEventListener("click",function(){playAt(items[0].idx);});
-    group.appendChild(header);
+    hdr.addEventListener("click",function(){playAt(items[0].idx);});
+    grp.appendChild(hdr);
     items.forEach(function(item){
       var c=item.clip,i=item.idx;
       var btn=document.createElement("button");
@@ -403,9 +388,9 @@ function renderResults(){
         '<span class="ri-txt">'+hl(c.text,lastQ)+'</span>'+
         '<span class="ri-ic">'+(i===cur?"▶":"›")+'</span>';
       btn.addEventListener("click",function(e){e.stopPropagation();playAt(i);});
-      group.appendChild(btn);
+      grp.appendChild(btn);
     });
-    list.appendChild(group);
+    list.appendChild(grp);
   });
 }
 
@@ -415,22 +400,19 @@ function updateHL(){
     el.classList.toggle("on",i===cur);
     el.querySelector(".ri-ic").textContent=i===cur?"▶":"›";
   });
-  document.querySelectorAll(".vid-header").forEach(function(el){
-    el.classList.remove("active-vid");
-  });
-  var activeBtn=document.querySelector('.ri[data-idx="'+cur+'"]');
-  if(activeBtn){
-    var grp=activeBtn.closest(".vid-group");
-    if(grp) grp.querySelector(".vid-header").classList.add("active-vid");
-    activeBtn.scrollIntoView({block:"nearest",behavior:"smooth"});
+  document.querySelectorAll(".vid-header").forEach(function(el){el.classList.remove("active-vid");});
+  var ab=document.querySelector('.ri[data-idx="'+cur+'"]');
+  if(ab){
+    var g=ab.closest(".vid-group");
+    if(g) g.querySelector(".vid-header").classList.add("active-vid");
+    ab.scrollIntoView({block:"nearest",behavior:"smooth"});
   }
 }
 
 // ─── 재생 ──────────────────────────────────────────
 function playAt(idx){
   if(!clips.length) return;
-  stopLoop();
-  cur=idx;
+  stopLoop(); cur=idx;
   var c=clips[cur];
   document.getElementById("ci").textContent=cur+1;
   document.getElementById("ct").textContent=clips.length;
@@ -439,7 +421,6 @@ function playAt(idx){
   updateHL();
   if(loopOn) startLoop();
 }
-
 function stopLoop(){clearInterval(loopTm);}
 function startLoop(){
   stopLoop();
