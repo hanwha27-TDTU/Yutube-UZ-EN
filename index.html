@@ -441,7 +441,6 @@
 // ──────────────────────────────────────────────
 //  CONFIG
 // ──────────────────────────────────────────────
-const CORS_PROXY   = "https://api.allorigins.win/raw?url=";
 const BACKEND_URL  = null; // "https://PROJECT.supabase.co/functions/v1/get-transcript"
 const YT_API_KEY   = "AIzaSyCK7SlC5X2mEO8tQr0rI6lLOOFo_1-Svwo";
 const SEARCH_COUNT = 10; // 한 번에 검색할 영상 수 (최대 50, 쿼터 주의)
@@ -513,8 +512,42 @@ function setSpinner(on) {
 }
 
 // ──────────────────────────────────────────────
-//  자막 fetch
+//  자막 fetch — 다중 프록시 + 자동자막 fallback
 // ──────────────────────────────────────────────
+
+// 시도할 프록시 목록 (순서대로 fallback)
+const PROXIES = [
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => `https://cors-anywhere.herokuapp.com/${url}`,
+];
+
+// 자막 URL 후보 생성 (수동자막 → 자동자막 순서)
+function buildTimedUrls(videoId, lang) {
+  return [
+    // 수동 자막 (srv3 포맷)
+    `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${lang}&fmt=srv3`,
+    // 자동 생성 자막 (asr)
+    `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${lang}&kind=asr&fmt=srv3`,
+    // 영어 자동자막 fallback
+    `https://www.youtube.com/api/timedtext?v=${videoId}&lang=en&kind=asr&fmt=srv3`,
+    // 구버전 포맷
+    `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${lang}`,
+  ];
+}
+
+async function fetchWithProxy(targetUrl) {
+  for (const makeProxy of PROXIES) {
+    try {
+      const r = await fetch(makeProxy(targetUrl), { signal: AbortSignal.timeout(6000) });
+      if (!r.ok) continue;
+      const text = await r.text();
+      if (text && text.length > 10) return text;
+    } catch (_) { continue; }
+  }
+  return null;
+}
+
 async function fetchTranscript(videoId, lang) {
   // ① 백엔드 있으면 백엔드 우선
   if (BACKEND_URL) {
@@ -527,13 +560,15 @@ async function fetchTranscript(videoId, lang) {
     return r.json();
   }
 
-  // ② CORS 프록시 경유 (프로토타입)
-  const timedUrl = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${lang}&fmt=srv3`;
-  const r = await fetch(CORS_PROXY + encodeURIComponent(timedUrl));
-  if (!r.ok) throw new Error("자막 요청 실패");
-  const xml = await r.text();
-  if (!xml.includes("<text")) return null; // 자막 없음
-  return parseTimedText(xml);
+  // ② 다중 URL × 다중 프록시로 시도
+  const urls = buildTimedUrls(videoId, lang);
+  for (const timedUrl of urls) {
+    const xml = await fetchWithProxy(timedUrl);
+    if (xml && xml.includes("<text")) {
+      return parseTimedText(xml);
+    }
+  }
+  return null; // 자막 없는 영상
 }
 
 // ──────────────────────────────────────────────
