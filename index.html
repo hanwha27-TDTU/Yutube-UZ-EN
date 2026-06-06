@@ -4,354 +4,92 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ClipSpeak — 원어민 발음 검색기</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #12121a;
-    --surface2: #1a1a26;
-    --border: #2a2a3d;
-    --accent: #6ee7b7;
-    --accent2: #f59e0b;
-    --red: #f87171;
-    --text: #e8e8f0;
-    --muted: #6b6b85;
-    --font-display: 'Bebas Neue', sans-serif;
-    --font-body: 'DM Sans', sans-serif;
-    --font-mono: 'DM Mono', monospace;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: var(--font-body);
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* 배경 그라디언트 */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(ellipse 60% 40% at 10% 0%, rgba(110,231,183,.07) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 30% at 90% 80%, rgba(245,158,11,.05) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 20px; }
-
-  /* ── HEADER ── */
-  header {
-    padding: 28px 0 20px;
-    display: flex;
-    align-items: baseline;
-    gap: 16px;
-  }
-  .logo {
-    font-family: var(--font-display);
-    font-size: 42px;
-    letter-spacing: 2px;
-    color: var(--accent);
-    line-height: 1;
-  }
-  .logo span { color: var(--accent2); }
-  .tagline {
-    font-size: 13px;
-    color: var(--muted);
-    letter-spacing: 0.5px;
-  }
-
-  /* ── SEARCH BAR ── */
-  .search-row {
-    display: grid;
-    grid-template-columns: 1fr 120px 120px auto;
-    gap: 10px;
-    margin-bottom: 28px;
-  }
-  .search-row input,
-  .search-row select {
-    height: 52px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--text);
-    padding: 0 16px;
-    font-family: var(--font-body);
-    font-size: 16px;
-    outline: none;
-    transition: border-color .2s;
-  }
-  .search-row input:focus,
-  .search-row select:focus { border-color: var(--accent); }
-  .search-row input::placeholder { color: var(--muted); }
-
-  .btn-search {
-    height: 52px;
-    padding: 0 28px;
-    background: var(--accent);
-    color: #0a0a0f;
-    border: none;
-    border-radius: 10px;
-    font-family: var(--font-display);
-    font-size: 20px;
-    letter-spacing: 1px;
-    cursor: pointer;
-    transition: opacity .15s, transform .1s;
-    white-space: nowrap;
-  }
-  .btn-search:hover { opacity: .88; }
-  .btn-search:active { transform: scale(.97); }
-
-  /* ── MAIN LAYOUT ── */
-  .layout {
-    display: grid;
-    grid-template-columns: minmax(0,1.4fr) minmax(0,.8fr);
-    gap: 20px;
-    align-items: start;
-  }
-
-  /* ── PLAYER ── */
-  .player-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow: hidden;
-  }
-  .player-wrap {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 16/9;
-    background: #000;
-  }
-  #yt-player { width: 100%; height: 100%; display: block; }
-
-  .player-footer {
-    padding: 14px 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border-top: 1px solid var(--border);
-  }
-  .btn-ctrl {
-    height: 40px;
-    min-width: 40px;
-    padding: 0 14px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-size: 16px;
-    cursor: pointer;
-    transition: background .15s, border-color .15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    font-family: var(--font-body);
-  }
-  .btn-ctrl:hover { background: var(--border); }
-  .btn-ctrl.active { background: #0d2e24; border-color: var(--accent); color: var(--accent); }
-
-  .clip-counter {
-    margin-left: auto;
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--muted);
-  }
-  .clip-counter strong { color: var(--text); }
-
-  /* 현재 자막 표시 */
-  .caption-display {
-    margin-top: 14px;
-    min-height: 72px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px 18px;
-    font-size: 18px;
-    line-height: 1.6;
-    display: flex;
-    align-items: center;
-  }
-  .caption-display mark {
-    background: transparent;
-    color: var(--accent);
-    font-weight: 600;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-  .caption-display .placeholder {
-    color: var(--muted);
-    font-size: 15px;
-  }
-
-  /* loop 배너 */
-  .loop-banner {
-    margin-top: 10px;
-    display: none;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 14px;
-    background: #0d2e24;
-    border: 1px solid var(--accent);
-    border-radius: 8px;
-    font-size: 13px;
-    color: var(--accent);
-  }
-  .loop-banner.show { display: flex; }
-  .loop-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: pulse 1s infinite;
-  }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-
-  /* ── RESULTS PANEL ── */
-  .results-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow: hidden;
-    max-height: calc(100vh - 180px);
-    display: flex;
-    flex-direction: column;
-  }
-  .results-header {
-    padding: 14px 16px 10px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-shrink: 0;
-  }
-  .results-title {
-    font-family: var(--font-display);
-    font-size: 20px;
-    letter-spacing: 1px;
-    color: var(--text);
-  }
-  .results-count {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--muted);
-    background: var(--surface2);
-    padding: 3px 10px;
-    border-radius: 99px;
-  }
-
-  .results-list {
-    overflow-y: auto;
-    flex: 1;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-  }
-
-  .result-item {
-    width: 100%;
-    text-align: left;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 9px;
-    padding: 11px 13px;
-    cursor: pointer;
-    transition: border-color .15s, background .15s;
-    display: grid;
-    grid-template-columns: 44px 1fr 22px;
-    gap: 8px;
-    align-items: center;
-    font-family: var(--font-body);
-    color: var(--text);
-  }
-  .result-item:hover { border-color: #3a3a55; background: #1e1e2e; }
-  .result-item.active {
-    border-color: var(--accent);
-    background: #0d2e24;
-  }
-  .result-ts {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--muted);
-  }
-  .result-text { font-size: 13.5px; line-height: 1.5; word-break: break-word; }
-  .result-text mark {
-    background: rgba(110,231,183,.18);
-    color: var(--accent);
-    border-radius: 3px;
-    padding: 0 2px;
-  }
-  .result-icon { font-size: 12px; color: var(--muted); text-align: right; }
-  .result-item.active .result-icon { color: var(--accent); }
-
-  /* 상태 메시지 */
-  .state-msg {
-    padding: 30px 16px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 14px;
-    line-height: 1.8;
-  }
-  .state-msg .big { font-size: 32px; display: block; margin-bottom: 8px; }
-
-  /* 에러 */
-  .error-bar {
-    display: none;
-    margin-bottom: 12px;
-    padding: 12px 16px;
-    background: #1f0a0a;
-    border: 1px solid var(--red);
-    border-radius: 10px;
-    color: var(--red);
-    font-size: 13px;
-    line-height: 1.6;
-  }
-  .error-bar.show { display: block; }
-
-  /* 힌트 */
-  .hint-bar {
-    margin-top: 10px;
-    padding: 10px 14px;
-    background: #131320;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 12px;
-    color: var(--muted);
-    line-height: 1.7;
-  }
-  .hint-bar code { color: var(--accent2); font-family: var(--font-mono); }
-
-  /* 로딩 스피너 */
-  .spinner {
-    display: none;
-    width: 20px; height: 20px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin .6s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spinner.show { display: inline-block; }
-
-  /* 반응형 */
-  @media (max-width: 760px) {
-    .layout { grid-template-columns: 1fr; }
-    .search-row { grid-template-columns: 1fr 1fr; }
-    .search-row input { grid-column: 1/-1; }
-    .btn-search { grid-column: 1/-1; }
-    .results-card { max-height: 50vh; }
-    header { padding: 18px 0 14px; }
-    .logo { font-size: 32px; }
-  }
+:root {
+  --bg:#0a0a0f; --surface:#12121a; --surface2:#1a1a26; --border:#2a2a3d;
+  --accent:#6ee7b7; --accent2:#f59e0b; --red:#f87171;
+  --text:#e8e8f0; --muted:#6b6b85;
+  --fd:'Bebas Neue',sans-serif; --fb:'DM Sans',sans-serif; --fm:'DM Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 60% 40% at 10% 0%,rgba(110,231,183,.07) 0%,transparent 60%),
+             radial-gradient(ellipse 40% 30% at 90% 80%,rgba(245,158,11,.05) 0%,transparent 50%)}
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px}
+header{padding:28px 0 20px;display:flex;align-items:baseline;gap:16px}
+.logo{font-family:var(--fd);font-size:42px;letter-spacing:2px;color:var(--accent);line-height:1}
+.logo span{color:var(--accent2)}
+.tagline{font-size:13px;color:var(--muted)}
+.search-row{display:grid;grid-template-columns:1fr 130px 130px auto;gap:10px;margin-bottom:28px}
+.search-row input,.search-row select{height:52px;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;color:var(--text);padding:0 16px;font-family:var(--fb);font-size:16px;outline:none;transition:border-color .2s}
+.search-row input:focus,.search-row select:focus{border-color:var(--accent)}
+.search-row input::placeholder{color:var(--muted)}
+.btn-search{height:52px;padding:0 28px;background:var(--accent);color:#0a0a0f;border:none;
+  border-radius:10px;font-family:var(--fd);font-size:20px;letter-spacing:1px;cursor:pointer;white-space:nowrap}
+.btn-search:hover{opacity:.88}
+.error-bar{display:none;margin-bottom:12px;padding:12px 16px;background:#1f0a0a;
+  border:1px solid var(--red);border-radius:10px;color:var(--red);font-size:13px;line-height:1.6}
+.error-bar.show{display:block}
+.layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr);gap:20px;align-items:start}
+.player-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.player-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000}
+#yt-player{width:100%;height:100%;display:block}
+.player-footer{padding:14px 16px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border)}
+.btn-ctrl{height:40px;min-width:40px;padding:0 14px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:6px;font-family:var(--fb)}
+.btn-ctrl:hover{background:var(--border)}
+.btn-ctrl.active{background:#0d2e24;border-color:var(--accent);color:var(--accent)}
+.clip-counter{margin-left:auto;font-family:var(--fm);font-size:13px;color:var(--muted)}
+.clip-counter strong{color:var(--text)}
+.caption-display{margin-top:14px;min-height:72px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:16px 18px;font-size:18px;line-height:1.6;display:flex;align-items:center}
+.caption-display mark{background:transparent;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.caption-display .placeholder{color:var(--muted);font-size:15px}
+.loop-banner{margin-top:10px;display:none;align-items:center;gap:10px;padding:9px 14px;
+  background:#0d2e24;border:1px solid var(--accent);border-radius:8px;font-size:13px;color:var(--accent)}
+.loop-banner.show{display:flex}
+.loop-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.hint-bar{margin-top:10px;padding:10px 14px;background:#131320;border:1px solid var(--border);
+  border-radius:8px;font-size:12px;color:var(--muted);line-height:1.7}
+.hint-bar code{color:var(--accent2);font-family:var(--fm)}
+.spinner{display:none;width:20px;height:20px;border:2px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner.show{display:inline-block}
+.results-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  overflow:hidden;max-height:calc(100vh - 180px);display:flex;flex-direction:column}
+.results-header{padding:14px 16px 10px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.results-title{font-family:var(--fd);font-size:20px;letter-spacing:1px}
+.results-count{font-family:var(--fm);font-size:12px;color:var(--muted);
+  background:var(--surface2);padding:3px 10px;border-radius:99px}
+.results-list{overflow-y:auto;flex:1;padding:10px;display:flex;flex-direction:column;gap:6px;
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.result-item{width:100%;text-align:left;background:var(--surface2);border:1px solid var(--border);
+  border-radius:9px;padding:11px 13px;cursor:pointer;transition:border-color .15s,background .15s;
+  display:grid;grid-template-columns:44px 1fr 22px;gap:8px;align-items:center;
+  font-family:var(--fb);color:var(--text)}
+.result-item:hover{border-color:#3a3a55;background:#1e1e2e}
+.result-item.active{border-color:var(--accent);background:#0d2e24}
+.result-ts{font-family:var(--fm);font-size:11px;color:var(--muted)}
+.result-text{font-size:13.5px;line-height:1.5;word-break:break-word}
+.result-text mark{background:rgba(110,231,183,.18);color:var(--accent);border-radius:3px;padding:0 2px}
+.result-icon{font-size:12px;color:var(--muted);text-align:right}
+.result-item.active .result-icon{color:var(--accent)}
+.state-msg{padding:30px 16px;text-align:center;color:var(--muted);font-size:14px;line-height:1.8}
+.state-msg .big{font-size:32px;display:block;margin-bottom:8px}
+@media(max-width:760px){
+  .layout{grid-template-columns:1fr}
+  .search-row{grid-template-columns:1fr 1fr}
+  .search-row input{grid-column:1/-1}
+  .btn-search{grid-column:1/-1}
+  .results-card{max-height:50vh}
+}
 </style>
 </head>
 <body>
@@ -361,7 +99,6 @@
     <div class="tagline">원어민 발음을 자막으로 검색하고 들어보세요</div>
   </header>
 
-  <!-- 검색 -->
   <div class="search-row">
     <input id="q" type="text" placeholder="검색할 단어 또는 문장 입력…" value="comfortable" autocomplete="off">
     <select id="lang">
@@ -376,363 +113,286 @@
       <option value="uk">UK 억양</option>
       <option value="any">모든 억양</option>
     </select>
-    <button class="btn-search" onclick="doSearch()">SEARCH</button>
+    <button class="btn-search" id="btnSearch">SEARCH</button>
   </div>
 
   <div id="errorBar" class="error-bar"></div>
 
   <div class="layout">
-    <!-- 왼쪽: 플레이어 -->
     <div>
       <div class="player-card">
-        <div class="player-wrap">
-          <div id="yt-player"></div>
-        </div>
+        <div class="player-wrap"><div id="yt-player"></div></div>
         <div class="player-footer">
-          <button class="btn-ctrl" onclick="prevClip()" title="이전">◀ 이전</button>
-          <button class="btn-ctrl" onclick="replayClip()" title="다시 듣기">↺</button>
-          <button class="btn-ctrl" id="btnLoop" onclick="toggleLoop()" title="구간 반복">🔁 반복</button>
-          <button class="btn-ctrl" onclick="nextClip()" title="다음">다음 ▶</button>
-          <div class="clip-counter">
-            <strong id="curIdx">–</strong> / <span id="totIdx">–</span>
-          </div>
+          <button class="btn-ctrl" id="btnPrev">◀ 이전</button>
+          <button class="btn-ctrl" id="btnReplay">↺</button>
+          <button class="btn-ctrl" id="btnLoop">🔁 반복</button>
+          <button class="btn-ctrl" id="btnNext">다음 ▶</button>
+          <div class="clip-counter"><strong id="curIdx">–</strong> / <span id="totIdx">–</span></div>
           <div class="spinner" id="spinner"></div>
         </div>
       </div>
-
-      <!-- 현재 자막 -->
       <div class="caption-display" id="captionDisplay">
         <span class="placeholder">검색어를 입력하고 SEARCH를 눌러 시작하세요.</span>
       </div>
-
-      <!-- 루프 배너 -->
       <div class="loop-banner" id="loopBanner">
-        <div class="loop-dot"></div>
-        구간 반복 재생 중 — 버튼을 다시 누르면 정지
+        <div class="loop-dot"></div>구간 반복 재생 중 — 반복 버튼을 다시 누르면 정지
       </div>
-
-      <!-- 힌트 -->
       <div class="hint-bar">
-        ✅ <strong>YouTube Search API 연동됨</strong> — 실시간으로 자막 있는 영상을 검색합니다.<br>
-        ⚠️ 자막은 CORS 프록시 경유로 가져옵니다. 일부 영상은 차단될 수 있습니다.<br>
-        💡 일일 쿼터: 검색 1회 = 100 유닛 / 무료 한도 10,000 유닛 (약 100회/일)
+        ✅ <strong>YouTube Search API + RapidAPI 자막</strong> 연동<br>
+        💡 일일 쿼터: YouTube 검색 100회/일 (무료)
       </div>
     </div>
 
-    <!-- 오른쪽: 결과 목록 -->
     <div class="results-card">
       <div class="results-header">
         <span class="results-title">RESULTS</span>
         <span class="results-count" id="resultCount">–</span>
       </div>
       <div class="results-list" id="resultsList">
-        <div class="state-msg">
-          <span class="big">🎙</span>
-          단어를 검색하면<br>자막이 포함된 구간이 나타납니다.
-        </div>
+        <div class="state-msg"><span class="big">🎙</span>단어를 검색하면<br>자막이 포함된 구간이 나타납니다.</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- YouTube IFrame API -->
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-// ──────────────────────────────────────────────
-//  CONFIG
-// ──────────────────────────────────────────────
-const BACKEND_URL  = null;
-const RAPIDAPI_KEY  = "43e4bbd8a9msh514bcb3ea6ba362p19196ajsn2052ebecf41e";
-const RAPIDAPI_HOST = "youtube-captions-transcript-subtitles-video-combiner.p.rapidapi.com";
+// ── CONFIG ──────────────────────────────────
 const YT_API_KEY   = "AIzaSyCK7SlC5X2mEO8tQr0rI6lLOOFo_1-Svwo";
-const SEARCH_COUNT = 10; // 한 번에 검색할 영상 수 (최대 50, 쿼터 주의)
+const RAPIDAPI_KEY = "43e4bbd8a9msh514bcb3ea6ba362p19196ajsn2052ebecf41e";
+const RAPIDAPI_HOST= "youtube-captions-transcript-subtitles-video-combiner.p.rapidapi.com";
+const SEARCH_COUNT = 10;
 
-// ──────────────────────────────────────────────
-//  STATE
-// ──────────────────────────────────────────────
-let player = null;
-let ytReady = false;
-let clips   = [];   // [{ videoId, start, dur, text }]
-let cur     = 0;
-let loopOn  = false;
-let loopTimer = null;
+// ── STATE ───────────────────────────────────
+var player = null;
+var ytReady = false;
+var clips   = [];
+var cur     = 0;
+var loopOn  = false;
+var loopTimer = null;
+var lastQuery = "";
 
-// ──────────────────────────────────────────────
-//  YouTube IFrame API
-// ──────────────────────────────────────────────
+// ── IFrame API ──────────────────────────────
 function onYouTubeIframeAPIReady() {
   ytReady = true;
   player = new YT.Player("yt-player", {
-    height: "100%", width: "100%",
-    playerVars: { rel: 0, playsinline: 1, cc_load_policy: 0 },
-    events: { onReady: () => {} }
+    height:"100%", width:"100%",
+    playerVars:{rel:0, playsinline:1, cc_load_policy:0},
+    events:{}
   });
 }
 
-// ──────────────────────────────────────────────
-//  유틸
-// ──────────────────────────────────────────────
+// ── 유틸 ────────────────────────────────────
 function fmt(sec) {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${s.toString().padStart(2,"0")}`;
+  var m = Math.floor(sec/60), s = Math.floor(sec%60);
+  return m+":"+(s<10?"0"+s:s);
 }
 
-function parseTimedText(xml) {
-  const doc = new DOMParser().parseFromString(xml, "text/xml");
-  return Array.from(doc.querySelectorAll("text")).map(el => ({
-    start: parseFloat(el.getAttribute("start") || "0"),
-    dur:   parseFloat(el.getAttribute("dur")   || "2"),
-    text:  el.textContent
-      .replace(/&#39;/g,"'").replace(/&amp;/g,"&")
-      .replace(/&quot;/g,'"').replace(/\n/g," ").trim()
-  }));
+function escHtml(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
 function highlight(text, q) {
   if (!q) return escHtml(text);
-  const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")})`, "gi");
+  var re = new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")", "gi");
   return escHtml(text).replace(re, "<mark>$1</mark>");
 }
 
-function escHtml(s) {
-  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-}
-
 function showError(msg) {
-  const el = document.getElementById("errorBar");
-  el.textContent = msg;
-  el.classList.add("show");
+  var el = document.getElementById("errorBar");
+  el.textContent = msg; el.classList.add("show");
 }
+function clearError() { document.getElementById("errorBar").classList.remove("show"); }
+function setSpinner(on) { document.getElementById("spinner").classList.toggle("show", on); }
 
-function clearError() {
-  document.getElementById("errorBar").classList.remove("show");
-}
-
-function setSpinner(on) {
-  document.getElementById("spinner").classList.toggle("show", on);
-}
-
-// ──────────────────────────────────────────────
-//  자막 fetch — RapidAPI (JSON 포맷)
-// ──────────────────────────────────────────────
-
-async function fetchTranscript(videoId, lang) {
-  try {
-    // RapidAPI: Download subtitle in JSON format
-    const url = `https://${RAPIDAPI_HOST}/download-json/${videoId}?language=${lang}&response_mode=default`;
-    const r = await fetch(url, {
-      method: "GET",
-      headers: {
-        "x-rapidapi-key":  RAPIDAPI_KEY,
-        "x-rapidapi-host": RAPIDAPI_HOST,
-        "Content-Type":    "application/json"
-      },
-      signal: AbortSignal.timeout(8000)
-    });
-    if (!r.ok) return null;
-    const data = await r.json();
-    if (!Array.isArray(data) || !data.length) return null;
-    // RapidAPI 응답: [{start, dur, text}, ...]
-    return data.map(item => ({
-      start: parseFloat(item.start || 0),
-      dur:   parseFloat(item.dur   || 2),
-      text:  (item.text || "")
-        .replace(/&#39;/g,"'").replace(/&amp;/g,"&")
-        .replace(/&quot;/g,'"').replace(/
-/g," ").trim()
-    })).filter(c => c.text.length > 0);
-  } catch (_) { return null; }
-}
-
-// ──────────────────────────────────────────────
-//  YouTube Search API — 영상 ID 목록 가져오기
-// ──────────────────────────────────────────────
+// ── YouTube Search API ───────────────────────
 async function searchVideoIds(q, lang) {
-  // relevanceLanguage: 검색 결과 언어 힌트
-  const params = new URLSearchParams({
-    part:              "id",
-    q:                 q,
-    type:              "video",
-    videoCaption:      "closedCaption", // 자막 있는 영상만
-    relevanceLanguage: lang,
-    maxResults:        SEARCH_COUNT,
-    key:               YT_API_KEY
+  var params = new URLSearchParams({
+    part:"id", q:q, type:"video",
+    videoCaption:"closedCaption",
+    relevanceLanguage:lang,
+    maxResults:SEARCH_COUNT,
+    key:YT_API_KEY
   });
-  const url = `https://www.googleapis.com/youtube/v3/search?${params}`;
-  const r = await fetch(url);
+  var r = await fetch("https://www.googleapis.com/youtube/v3/search?"+params);
   if (!r.ok) {
-    const err = await r.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `YouTube API 오류 (${r.status})`);
+    var err = await r.json().catch(function(){return {};});
+    throw new Error((err.error && err.error.message) || "YouTube API 오류 "+r.status);
   }
-  const data = await r.json();
-  return (data.items || []).map(item => item.id.videoId).filter(Boolean);
+  var data = await r.json();
+  return (data.items||[]).map(function(item){return item.id.videoId;}).filter(Boolean);
 }
 
-// ──────────────────────────────────────────────
-//  검색 실행
-// ──────────────────────────────────────────────
+// ── RapidAPI 자막 fetch ──────────────────────
+async function fetchTranscript(videoId, lang) {
+  var url = "https://"+RAPIDAPI_HOST+"/download-json/"+videoId+"?language="+lang+"&response_mode=default";
+  var r = await fetch(url, {
+    method:"GET",
+    headers:{
+      "x-rapidapi-key": RAPIDAPI_KEY,
+      "x-rapidapi-host": RAPIDAPI_HOST,
+      "Content-Type":"application/json"
+    },
+    signal: AbortSignal.timeout(8000)
+  });
+  if (!r.ok) return null;
+  var data = await r.json();
+  if (!Array.isArray(data) || !data.length) return null;
+  return data.map(function(item){
+    return {
+      start: parseFloat(item.start||0),
+      dur:   parseFloat(item.dur||2),
+      text:  String(item.text||"")
+        .replace(/&#39;/g,"'").replace(/&amp;/g,"&")
+        .replace(/&quot;/g,'"').replace(/\n/g," ").trim()
+    };
+  }).filter(function(c){return c.text.length>0;});
+}
+
+// ── 검색 실행 ────────────────────────────────
 async function doSearch() {
   clearError();
-  const q    = document.getElementById("q").value.trim();
-  const lang = document.getElementById("lang").value;
+  var q    = document.getElementById("q").value.trim();
+  var lang = document.getElementById("lang").value;
   if (!q) { showError("검색어를 입력하세요."); return; }
 
-  clips = [];
-  cur   = 0;
+  lastQuery = q;
+  clips = []; cur = 0;
   document.getElementById("resultsList").innerHTML =
-    `<div class="state-msg"><span class="big">⏳</span>YouTube에서 영상 검색 중…</div>`;
+    '<div class="state-msg"><span class="big">⏳</span>YouTube에서 영상 검색 중…</div>';
   document.getElementById("resultCount").textContent = "–";
+  document.getElementById("curIdx").textContent = "–";
+  document.getElementById("totIdx").textContent = "–";
   setSpinner(true);
 
-  let videoIds = [];
+  var videoIds = [];
   try {
     videoIds = await searchVideoIds(q, lang);
-  } catch (e) {
+  } catch(e) {
     setSpinner(false);
-    showError(`YouTube 검색 실패: ${e.message}`);
+    showError("YouTube 검색 실패: "+e.message);
     document.getElementById("resultsList").innerHTML =
-      `<div class="state-msg"><span class="big">⚠️</span>${e.message}</div>`;
+      '<div class="state-msg"><span class="big">⚠️</span>'+escHtml(e.message)+'</div>';
     return;
   }
 
   if (!videoIds.length) {
     setSpinner(false);
-    showError(`"${q}" 관련 영상을 찾지 못했습니다.`);
+    showError('"'+q+'" 관련 영상을 찾지 못했습니다.');
     document.getElementById("resultsList").innerHTML =
-      `<div class="state-msg"><span class="big">😶</span>결과 없음</div>`;
+      '<div class="state-msg"><span class="big">😶</span>결과 없음</div>';
     document.getElementById("resultCount").textContent = "0";
     return;
   }
 
-  // 진행 상태 표시
   document.getElementById("resultsList").innerHTML =
-    `<div class="state-msg"><span class="big">📄</span>영상 ${videoIds.length}개에서 자막 분석 중…</div>`;
+    '<div class="state-msg"><span class="big">📄</span>영상 '+videoIds.length+'개에서 자막 분석 중…</div>';
 
-  // 영상 10개 동시 병렬 fetch (순차 대비 ~5배 빠름)
-  const results = await Promise.all(
-    videoIds.map(async vid => {
-      try {
-        const captions = await fetchTranscript(vid, lang);
-        if (!captions) return [];
-        return captions
-          .filter(c => c.text.toLowerCase().includes(q.toLowerCase()))
-          .map(h => ({ videoId: vid, ...h }));
-      } catch (_) { return []; }
-    })
-  );
-  const found = results.flat();
+  // 병렬 자막 fetch
+  var results = await Promise.all(videoIds.map(async function(vid){
+    try {
+      var captions = await fetchTranscript(vid, lang);
+      if (!captions) return [];
+      return captions
+        .filter(function(c){ return c.text.toLowerCase().indexOf(q.toLowerCase()) !== -1; })
+        .map(function(h){ return Object.assign({videoId:vid}, h); });
+    } catch(_){ return []; }
+  }));
 
+  var found = [].concat.apply([], results);
   setSpinner(false);
   clips = found;
 
   if (!found.length) {
-    showError(`영상은 찾았지만 "${q}" 가 포함된 자막 문장이 없습니다. 다른 단어를 시도해보세요.`);
+    showError('영상은 찾았지만 "'+q+'" 가 포함된 자막이 없습니다. 다른 단어를 시도해보세요.');
     document.getElementById("resultsList").innerHTML =
-      `<div class="state-msg"><span class="big">😶</span>자막 매칭 없음</div>`;
+      '<div class="state-msg"><span class="big">😶</span>자막 매칭 없음</div>';
     document.getElementById("resultCount").textContent = "0";
     return;
   }
 
-  renderResults(q);
+  renderResults();
   playAt(0);
 }
 
-// ──────────────────────────────────────────────
-//  결과 렌더
-// ──────────────────────────────────────────────
-function renderResults(q) {
-  const list = document.getElementById("resultsList");
-  document.getElementById("resultCount").textContent = `${clips.length}개`;
+// ── 결과 렌더 ────────────────────────────────
+function renderResults() {
+  var list = document.getElementById("resultsList");
+  document.getElementById("resultCount").textContent = clips.length+"개";
   list.innerHTML = "";
-  clips.forEach((c, i) => {
-    const btn = document.createElement("button");
-    btn.className = "result-item" + (i === cur ? " active" : "");
-    btn.innerHTML = `
-      <span class="result-ts">${fmt(c.start)}</span>
-      <span class="result-text">${highlight(c.text, q)}</span>
-      <span class="result-icon">${i === cur ? "▶" : "›"}</span>`;
-    btn.onclick = () => playAt(i);
+  clips.forEach(function(c, i){
+    var btn = document.createElement("button");
+    btn.className = "result-item"+(i===cur?" active":"");
+    btn.innerHTML =
+      '<span class="result-ts">'+fmt(c.start)+'</span>'+
+      '<span class="result-text">'+highlight(c.text, lastQuery)+'</span>'+
+      '<span class="result-icon">'+(i===cur?"▶":"›")+'</span>';
+    btn.addEventListener("click", function(){ playAt(i); });
     list.appendChild(btn);
   });
 }
 
-function updateResultHighlight() {
-  document.querySelectorAll(".result-item").forEach((el, i) => {
-    el.classList.toggle("active", i === cur);
-    el.querySelector(".result-icon").textContent = i === cur ? "▶" : "›";
+function updateHighlight() {
+  var items = document.querySelectorAll(".result-item");
+  items.forEach(function(el, i){
+    el.classList.toggle("active", i===cur);
+    el.querySelector(".result-icon").textContent = i===cur?"▶":"›";
   });
-  // 스크롤
-  const active = document.querySelector(".result-item.active");
-  active?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  var active = document.querySelector(".result-item.active");
+  if (active) active.scrollIntoView({block:"nearest", behavior:"smooth"});
 }
 
-// ──────────────────────────────────────────────
-//  플레이어 제어
-// ──────────────────────────────────────────────
+// ── 재생 제어 ────────────────────────────────
 function playAt(idx) {
   if (!clips.length) return;
   stopLoop();
   cur = idx;
-  const c = clips[cur];
-  const q = document.getElementById("q").value.trim();
-
-  // 카운터
-  document.getElementById("curIdx").textContent = cur + 1;
+  var c = clips[cur];
+  document.getElementById("curIdx").textContent = cur+1;
   document.getElementById("totIdx").textContent = clips.length;
-
-  // 자막 표시
-  document.getElementById("captionDisplay").innerHTML =
-    highlight(c.text, q);
-
-  // 플레이어
+  document.getElementById("captionDisplay").innerHTML = highlight(c.text, lastQuery);
   if (player && player.loadVideoById) {
-    player.loadVideoById({ videoId: c.videoId, startSeconds: c.start });
+    player.loadVideoById({videoId:c.videoId, startSeconds:c.start});
   }
-
-  updateResultHighlight();
-  if (loopOn) startLoopInterval();
+  updateHighlight();
+  if (loopOn) startLoop();
 }
 
-function prevClip() { if (cur > 0) playAt(cur - 1); }
-function nextClip() { if (cur < clips.length - 1) playAt(cur + 1); }
+function stopLoop() { clearInterval(loopTimer); }
 
-function replayClip() {
+function startLoop() {
+  stopLoop();
   if (!clips.length || !player) return;
-  player.seekTo(clips[cur].start, true);
-  player.playVideo();
-}
-
-// ── 반복 ──────────────────────────────────────
-function toggleLoop() {
-  loopOn = !loopOn;
-  const btn = document.getElementById("btnLoop");
-  btn.classList.toggle("active", loopOn);
-  document.getElementById("loopBanner").classList.toggle("show", loopOn);
-  if (loopOn) startLoopInterval();
-  else stopLoop();
-}
-
-function startLoopInterval() {
-  clearInterval(loopTimer);
-  if (!clips.length || !player) return;
-  const c   = clips[cur];
-  const end = c.start + c.dur + 0.4;
-  loopTimer = setInterval(() => {
+  var c = clips[cur];
+  var end = c.start + c.dur + 0.4;
+  loopTimer = setInterval(function(){
     try {
-      const t = player.getCurrentTime?.();
+      var t = player.getCurrentTime ? player.getCurrentTime() : 0;
       if (t >= end) { player.seekTo(c.start, true); player.playVideo(); }
     } catch(_){}
   }, 200);
 }
 
-function stopLoop() {
-  clearInterval(loopTimer);
-}
-
-// ── 엔터키 검색 ───────────────────────────────
-document.getElementById("q").addEventListener("keydown", e => {
-  if (e.key === "Enter") doSearch();
+// ── 이벤트 바인딩 ────────────────────────────
+document.getElementById("btnSearch").addEventListener("click", doSearch);
+document.getElementById("q").addEventListener("keydown", function(e){
+  if (e.key==="Enter") doSearch();
+});
+document.getElementById("btnPrev").addEventListener("click", function(){
+  if (cur>0) playAt(cur-1);
+});
+document.getElementById("btnNext").addEventListener("click", function(){
+  if (cur<clips.length-1) playAt(cur+1);
+});
+document.getElementById("btnReplay").addEventListener("click", function(){
+  if (!clips.length||!player) return;
+  player.seekTo(clips[cur].start, true); player.playVideo();
+});
+document.getElementById("btnLoop").addEventListener("click", function(){
+  loopOn = !loopOn;
+  document.getElementById("btnLoop").classList.toggle("active", loopOn);
+  document.getElementById("loopBanner").classList.toggle("show", loopOn);
+  if (loopOn) startLoop(); else stopLoop();
 });
 </script>
 </body>
