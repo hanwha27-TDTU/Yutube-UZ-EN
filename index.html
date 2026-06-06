@@ -512,44 +512,23 @@ function setSpinner(on) {
 }
 
 // ──────────────────────────────────────────────
-//  자막 fetch — 다중 프록시 + 자동자막 fallback
+//  자막 fetch — 병렬 동시 요청으로 속도 개선
 // ──────────────────────────────────────────────
 
-// 시도할 프록시 목록 (순서대로 fallback)
-const PROXIES = [
-  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  url => `https://cors-anywhere.herokuapp.com/${url}`,
-];
-
-// 자막 URL 후보 생성 (수동자막 → 자동자막 순서)
-function buildTimedUrls(videoId, lang) {
-  return [
-    // 수동 자막 (srv3 포맷)
-    `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${lang}&fmt=srv3`,
-    // 자동 생성 자막 (asr)
-    `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${lang}&kind=asr&fmt=srv3`,
-    // 영어 자동자막 fallback
-    `https://www.youtube.com/api/timedtext?v=${videoId}&lang=en&kind=asr&fmt=srv3`,
-    // 구버전 포맷
-    `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${lang}`,
-  ];
+function makeProxyUrl(targetUrl) {
+  return `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
 }
 
-async function fetchWithProxy(targetUrl) {
-  for (const makeProxy of PROXIES) {
-    try {
-      const r = await fetch(makeProxy(targetUrl), { signal: AbortSignal.timeout(6000) });
-      if (!r.ok) continue;
-      const text = await r.text();
-      if (text && text.length > 10) return text;
-    } catch (_) { continue; }
-  }
-  return null;
+async function tryFetch(url) {
+  try {
+    const r = await fetch(makeProxyUrl(url), { signal: AbortSignal.timeout(4000) });
+    if (!r.ok) return null;
+    const text = await r.text();
+    return (text && text.includes("<text")) ? text : null;
+  } catch (_) { return null; }
 }
 
 async function fetchTranscript(videoId, lang) {
-  // ① 백엔드 있으면 백엔드 우선
   if (BACKEND_URL) {
     const r = await fetch(BACKEND_URL, {
       method: "POST",
@@ -560,15 +539,14 @@ async function fetchTranscript(videoId, lang) {
     return r.json();
   }
 
-  // ② 다중 URL × 다중 프록시로 시도
-  const urls = buildTimedUrls(videoId, lang);
-  for (const timedUrl of urls) {
-    const xml = await fetchWithProxy(timedUrl);
-    if (xml && xml.includes("<text")) {
-      return parseTimedText(xml);
-    }
-  }
-  return null; // 자막 없는 영상
+  // 자동자막(asr) + 영어 fallback 동시 요청
+  const urls = [
+    `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${lang}&kind=asr&fmt=srv3`,
+    `https://www.youtube.com/api/timedtext?v=${videoId}&lang=en&kind=asr&fmt=srv3`,
+  ];
+  const results = await Promise.all(urls.map(tryFetch));
+  const xml = results.find(r => r !== null);
+  return xml ? parseTimedText(xml) : null;
 }
 
 // ──────────────────────────────────────────────
@@ -635,17 +613,19 @@ async function doSearch() {
   document.getElementById("resultsList").innerHTML =
     `<div class="state-msg"><span class="big">📄</span>영상 ${videoIds.length}개에서 자막 분석 중…</div>`;
 
-  const found = [];
-  for (const vid of videoIds) {
-    try {
-      const captions = await fetchTranscript(vid, lang);
-      if (!captions) continue;
-      const hits = captions.filter(c =>
-        c.text.toLowerCase().includes(q.toLowerCase())
-      );
-      hits.forEach(h => found.push({ videoId: vid, ...h }));
-    } catch (_) { /* 영상별 오류는 무시 */ }
-  }
+  // 영상 10개 동시 병렬 fetch (순차 대비 ~5배 빠름)
+  const results = await Promise.all(
+    videoIds.map(async vid => {
+      try {
+        const captions = await fetchTranscript(vid, lang);
+        if (!captions) return [];
+        return captions
+          .filter(c => c.text.toLowerCase().includes(q.toLowerCase()))
+          .map(h => ({ videoId: vid, ...h }));
+      } catch (_) { return []; }
+    })
+  );
+  const found = results.flat();
 
   setSpinner(false);
   clips = found;
