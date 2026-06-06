@@ -48,15 +48,30 @@ header{padding:28px 0 20px;display:flex;align-items:baseline;gap:16px}
 .rhead{padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .rtitle{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px}
 .rcnt{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);background:var(--surface2);padding:3px 10px;border-radius:99px}
-.rlist{overflow-y:auto;flex:1;padding:10px;display:flex;flex-direction:column;gap:6px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
-.ri{width:100%;text-align:left;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px 13px;cursor:pointer;transition:border-color .15s,background .15s;display:grid;grid-template-columns:44px 1fr 22px;gap:8px;align-items:center;font-family:'DM Sans',sans-serif;color:var(--text)}
-.ri:hover{border-color:#3a3a55;background:#1e1e2e}
+.rlist{overflow-y:auto;flex:1;padding:10px;display:flex;flex-direction:column;gap:4px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+
+/* 영상 그룹 헤더 */
+.vid-group{margin-top:8px}
+.vid-group:first-child{margin-top:0}
+.vid-header{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:4px;cursor:pointer;transition:border-color .15s}
+.vid-header:hover{border-color:#3a3a55}
+.vid-header.active-vid{border-color:var(--accent2);background:#1a1500}
+.vid-thumb{width:52px;height:36px;border-radius:5px;object-fit:cover;flex-shrink:0;background:var(--border)}
+.vid-info{flex:1;min-width:0}
+.vid-title{font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.vid-meta{font-size:10px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace}
+.vid-badge{font-size:10px;background:var(--accent2);color:#0a0a0f;border-radius:4px;padding:1px 6px;flex-shrink:0;font-weight:600}
+
+/* 자막 아이템 */
+.ri{width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:7px;padding:8px 10px 8px 18px;cursor:pointer;transition:border-color .15s,background .15s;display:grid;grid-template-columns:38px 1fr 18px;gap:6px;align-items:center;font-family:'DM Sans',sans-serif;color:var(--text)}
+.ri:hover{border-color:#2a2a3d;background:var(--surface2)}
 .ri.on{border-color:var(--accent);background:#0d2e24}
-.ri-ts{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
-.ri-txt{font-size:13.5px;line-height:1.5;word-break:break-word}
+.ri-ts{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)}
+.ri-txt{font-size:13px;line-height:1.5;word-break:break-word}
 .ri-txt mark{background:rgba(110,231,183,.18);color:var(--accent);border-radius:3px;padding:0 2px}
-.ri-ic{font-size:12px;color:var(--muted);text-align:right}
+.ri-ic{font-size:11px;color:var(--muted);text-align:right}
 .ri.on .ri-ic{color:var(--accent)}
+
 .smsg{padding:30px 16px;text-align:center;color:var(--muted);font-size:14px;line-height:1.8}
 .smsg .big{font-size:32px;display:block;margin-bottom:8px}
 @media(max-width:760px){.layout{grid-template-columns:1fr}.srow{grid-template-columns:1fr auto}.srow input{grid-column:1/-1}.rcard{max-height:50vh}}
@@ -116,10 +131,12 @@ var RA_HOST = "youtube-captions-transcript-subtitles-video-combiner.p.rapidapi.c
 
 // ─── STATE ─────────────────────────────────────────
 var player=null, clips=[], cur=0, loopOn=false, loopTm=null, lastQ="";
+// vidMeta: { videoId → { title, thumb } }
+var vidMeta={};
 
 // ─── YouTube IFrame ────────────────────────────────
 function onYouTubeIframeAPIReady(){
-  player = new YT.Player("ytp",{
+  player=new YT.Player("ytp",{
     height:"100%",width:"100%",
     playerVars:{rel:0,playsinline:1,cc_load_policy:0},
     events:{}
@@ -140,23 +157,34 @@ function setSpin(on){document.getElementById("spin").classList.toggle("show",on)
 function setList(html){document.getElementById("rlist").innerHTML=html;}
 function smsg(ico,msg){return '<div class="smsg"><span class="big">'+ico+'</span>'+msg+'</div>';}
 
-// ─── YouTube Search ────────────────────────────────
+// ─── YouTube Search (영상 ID + 제목 + 썸네일) ───────
 async function searchVids(q,lang){
-  var p=new URLSearchParams({part:"id",q:q,type:"video",videoCaption:"closedCaption",
-    relevanceLanguage:lang,maxResults:10,key:YT_KEY});
+  var p=new URLSearchParams({
+    part:"id,snippet",q:q,type:"video",
+    videoCaption:"closedCaption",
+    relevanceLanguage:lang,maxResults:10,key:YT_KEY
+  });
   var r=await fetch("https://www.googleapis.com/youtube/v3/search?"+p);
   if(!r.ok){var e=await r.json().catch(function(){return{};});throw new Error((e.error&&e.error.message)||"YouTube API 오류 "+r.status);}
   var d=await r.json();
-  return (d.items||[]).map(function(i){return i.id.videoId;}).filter(Boolean);
+  var items=d.items||[];
+  // 메타데이터 저장
+  items.forEach(function(item){
+    var vid=item.id.videoId;
+    if(!vid) return;
+    vidMeta[vid]={
+      title:(item.snippet&&item.snippet.title)||vid,
+      thumb:(item.snippet&&item.snippet.thumbnails&&item.snippet.thumbnails.default&&item.snippet.thumbnails.default.url)||""
+    };
+  });
+  return items.map(function(i){return i.id.videoId;}).filter(Boolean);
 }
 
 // ─── RapidAPI 자막 ─────────────────────────────────
 async function fetchSub(videoId,lang){
-  // 언어 fallback 순서
   var langs=[lang];
   if(lang!=="en") langs.push("en");
   langs=langs.filter(function(v,i,a){return a.indexOf(v)===i;});
-
   for(var i=0;i<langs.length;i++){
     try{
       var url="https://"+RA_HOST+"/download-json/"+videoId+"?language="+langs[i]+"&response_mode=default";
@@ -185,7 +213,7 @@ async function doSearch(){
   var lang=document.getElementById("lang").value;
   if(!q){showErr("검색어를 입력하세요.");return;}
 
-  lastQ=q; clips=[]; cur=0;
+  lastQ=q; clips=[]; cur=0; vidMeta={};
   setList(smsg("⏳","YouTube에서 영상 검색 중…"));
   document.getElementById("rcnt").textContent="–";
   document.getElementById("ci").textContent="–";
@@ -235,29 +263,83 @@ async function doSearch(){
   playAt(0);
 }
 
-// ─── 결과 렌더 ─────────────────────────────────────
+// ─── 결과 렌더 (영상별 그룹핑) ────────────────────
 function renderResults(){
   document.getElementById("rcnt").textContent=clips.length+"개";
   var list=document.getElementById("rlist");
   list.innerHTML="";
+
+  // 영상별로 그룹핑
+  var groups={}, order=[];
   clips.forEach(function(c,i){
-    var btn=document.createElement("button");
-    btn.className="ri"+(i===cur?" on":"");
-    btn.innerHTML='<span class="ri-ts">'+fmt(c.start)+'</span>'
-      +'<span class="ri-txt">'+hl(c.text,lastQ)+'</span>'
-      +'<span class="ri-ic">'+(i===cur?"▶":"›")+'</span>';
-    btn.addEventListener("click",function(){playAt(i);});
-    list.appendChild(btn);
+    if(!groups[c.videoId]){groups[c.videoId]=[];order.push(c.videoId);}
+    groups[c.videoId].push({clip:c,idx:i});
+  });
+
+  var curVid=clips[cur]?clips[cur].videoId:null;
+
+  order.forEach(function(vid){
+    var meta=vidMeta[vid]||{title:vid,thumb:""};
+    var items=groups[vid];
+    var isActiveVid=(vid===curVid);
+
+    // 영상 그룹 wrapper
+    var group=document.createElement("div");
+    group.className="vid-group";
+
+    // 영상 헤더
+    var header=document.createElement("div");
+    header.className="vid-header"+(isActiveVid?" active-vid":"");
+    header.innerHTML=
+      (meta.thumb?'<img class="vid-thumb" src="'+esc(meta.thumb)+'" alt="" loading="lazy">':'<div class="vid-thumb"></div>')+
+      '<div class="vid-info">'+
+        '<div class="vid-title">'+esc(meta.title)+'</div>'+
+        '<div class="vid-meta">'+items.length+'개 구간 · '+
+          '<a href="https://youtu.be/'+esc(vid)+'" target="_blank" style="color:var(--accent2);text-decoration:none">YouTube ↗</a>'+
+        '</div>'+
+      '</div>'+
+      '<span class="vid-badge">'+items.length+'</span>';
+    // 헤더 클릭 시 첫 번째 구간 재생
+    header.addEventListener("click",function(){playAt(items[0].idx);});
+    group.appendChild(header);
+
+    // 자막 아이템들
+    items.forEach(function(item){
+      var c=item.clip, i=item.idx;
+      var btn=document.createElement("button");
+      btn.className="ri"+(i===cur?" on":"");
+      btn.dataset.idx=i;
+      btn.innerHTML=
+        '<span class="ri-ts">'+fmt(c.start)+'</span>'+
+        '<span class="ri-txt">'+hl(c.text,lastQ)+'</span>'+
+        '<span class="ri-ic">'+(i===cur?"▶":"›")+'</span>';
+      btn.addEventListener("click",function(e){e.stopPropagation();playAt(i);});
+      group.appendChild(btn);
+    });
+
+    list.appendChild(group);
   });
 }
 
 function updateHL(){
-  document.querySelectorAll(".ri").forEach(function(el,i){
+  // 자막 아이템 하이라이트
+  document.querySelectorAll(".ri").forEach(function(el){
+    var i=parseInt(el.dataset.idx);
     el.classList.toggle("on",i===cur);
     el.querySelector(".ri-ic").textContent=i===cur?"▶":"›";
   });
-  var a=document.querySelector(".ri.on");
-  if(a) a.scrollIntoView({block:"nearest",behavior:"smooth"});
+  // 영상 헤더 하이라이트
+  var curVid=clips[cur]?clips[cur].videoId:null;
+  document.querySelectorAll(".vid-header").forEach(function(el){
+    el.classList.remove("active-vid");
+  });
+  // 현재 구간의 그룹 헤더 찾기
+  var activeBtn=document.querySelector('.ri[data-idx="'+cur+'"]');
+  if(activeBtn){
+    var grp=activeBtn.closest(".vid-group");
+    if(grp) grp.querySelector(".vid-header").classList.add("active-vid");
+    activeBtn.scrollIntoView({block:"nearest",behavior:"smooth"});
+  }
 }
 
 // ─── 재생 ──────────────────────────────────────────
