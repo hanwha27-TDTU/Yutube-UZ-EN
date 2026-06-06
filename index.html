@@ -6,90 +6,60 @@
 <title>ClipSpeak — 원어민 발음 검색기</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg:#0a0a0f; --surface:#12121a; --surface2:#1a1a26; --border:#2a2a3d;
-  --accent:#6ee7b7; --accent2:#f59e0b; --red:#f87171;
-  --text:#e8e8f0; --muted:#6b6b85;
-  --fd:'Bebas Neue',sans-serif; --fb:'DM Sans',sans-serif; --fm:'DM Mono',monospace;
-}
+:root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--border:#2a2a3d;--accent:#6ee7b7;--accent2:#f59e0b;--red:#f87171;--text:#e8e8f0;--muted:#6b6b85}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(ellipse 60% 40% at 10% 0%,rgba(110,231,183,.07) 0%,transparent 60%),
-             radial-gradient(ellipse 40% 30% at 90% 80%,rgba(245,158,11,.05) 0%,transparent 50%)}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 60% 40% at 10% 0%,rgba(110,231,183,.07),transparent 60%),radial-gradient(ellipse 40% 30% at 90% 80%,rgba(245,158,11,.05),transparent 50%)}
 .wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px}
 header{padding:28px 0 20px;display:flex;align-items:baseline;gap:16px}
-.logo{font-family:var(--fd);font-size:42px;letter-spacing:2px;color:var(--accent);line-height:1}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:2px;color:var(--accent);line-height:1}
 .logo span{color:var(--accent2)}
 .tagline{font-size:13px;color:var(--muted)}
-.search-row{display:grid;grid-template-columns:1fr 130px 130px auto;gap:10px;margin-bottom:28px}
-.search-row input,.search-row select{height:52px;background:var(--surface);border:1px solid var(--border);
-  border-radius:10px;color:var(--text);padding:0 16px;font-family:var(--fb);font-size:16px;outline:none;transition:border-color .2s}
-.search-row input:focus,.search-row select:focus{border-color:var(--accent)}
-.search-row input::placeholder{color:var(--muted)}
-.btn-search{height:52px;padding:0 28px;background:var(--accent);color:#0a0a0f;border:none;
-  border-radius:10px;font-family:var(--fd);font-size:20px;letter-spacing:1px;cursor:pointer;white-space:nowrap}
+.srow{display:grid;grid-template-columns:1fr 140px auto;gap:10px;margin-bottom:28px}
+.srow input,.srow select{height:52px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:0 16px;font-size:16px;outline:none;transition:border-color .2s;font-family:'DM Sans',sans-serif}
+.srow input:focus,.srow select:focus{border-color:var(--accent)}
+.srow input::placeholder{color:var(--muted)}
+.btn-search{height:52px;padding:0 28px;background:var(--accent);color:#0a0a0f;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;cursor:pointer;white-space:nowrap}
 .btn-search:hover{opacity:.88}
-.error-bar{display:none;margin-bottom:12px;padding:12px 16px;background:#1f0a0a;
-  border:1px solid var(--red);border-radius:10px;color:var(--red);font-size:13px;line-height:1.6}
-.error-bar.show{display:block}
-.layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr);gap:20px;align-items:start}
-.player-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-.player-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000}
-#yt-player{width:100%;height:100%;display:block}
-.player-footer{padding:14px 16px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border)}
-.btn-ctrl{height:40px;min-width:40px;padding:0 14px;background:var(--surface2);border:1px solid var(--border);
-  border-radius:8px;color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;
-  justify-content:center;gap:6px;font-family:var(--fb)}
-.btn-ctrl:hover{background:var(--border)}
-.btn-ctrl.active{background:#0d2e24;border-color:var(--accent);color:var(--accent)}
-.clip-counter{margin-left:auto;font-family:var(--fm);font-size:13px;color:var(--muted)}
-.clip-counter strong{color:var(--text)}
-.caption-display{margin-top:14px;min-height:72px;background:var(--surface2);border:1px solid var(--border);
-  border-radius:10px;padding:16px 18px;font-size:18px;line-height:1.6;display:flex;align-items:center}
-.caption-display mark{background:transparent;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px}
-.caption-display .placeholder{color:var(--muted);font-size:15px}
-.loop-banner{margin-top:10px;display:none;align-items:center;gap:10px;padding:9px 14px;
-  background:#0d2e24;border:1px solid var(--accent);border-radius:8px;font-size:13px;color:var(--accent)}
-.loop-banner.show{display:flex}
-.loop-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1s infinite}
+.err{display:none;margin-bottom:12px;padding:12px 16px;background:#1f0a0a;border:1px solid var(--red);border-radius:10px;color:var(--red);font-size:13px}
+.err.show{display:block}
+.layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr);gap:20px}
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.pwrap{width:100%;aspect-ratio:16/9;background:#000}
+#ytp{width:100%;height:100%;display:block}
+.pfoot{padding:14px 16px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border)}
+.bc{height:40px;min-width:40px;padding:0 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.bc:hover{background:var(--border)}
+.bc.on{background:#0d2e24;border-color:var(--accent);color:var(--accent)}
+.cnt{margin-left:auto;font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)}
+.cnt strong{color:var(--text)}
+.spin{display:none;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .6s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.spin.show{display:inline-block}
+.cdisplay{margin-top:14px;min-height:72px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;font-size:18px;line-height:1.6;display:flex;align-items:center}
+.cdisplay mark{background:transparent;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.cdisplay .ph{color:var(--muted);font-size:15px}
+.lbanner{margin-top:10px;display:none;align-items:center;gap:10px;padding:9px 14px;background:#0d2e24;border:1px solid var(--accent);border-radius:8px;font-size:13px;color:var(--accent)}
+.lbanner.show{display:flex}
+.ldot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.hint-bar{margin-top:10px;padding:10px 14px;background:#131320;border:1px solid var(--border);
-  border-radius:8px;font-size:12px;color:var(--muted);line-height:1.7}
-.hint-bar code{color:var(--accent2);font-family:var(--fm)}
-.spinner{display:none;width:20px;height:20px;border:2px solid var(--border);
-  border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.spinner.show{display:inline-block}
-.results-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;
-  overflow:hidden;max-height:calc(100vh - 180px);display:flex;flex-direction:column}
-.results-header{padding:14px 16px 10px;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.results-title{font-family:var(--fd);font-size:20px;letter-spacing:1px}
-.results-count{font-family:var(--fm);font-size:12px;color:var(--muted);
-  background:var(--surface2);padding:3px 10px;border-radius:99px}
-.results-list{overflow-y:auto;flex:1;padding:10px;display:flex;flex-direction:column;gap:6px;
-  scrollbar-width:thin;scrollbar-color:var(--border) transparent}
-.result-item{width:100%;text-align:left;background:var(--surface2);border:1px solid var(--border);
-  border-radius:9px;padding:11px 13px;cursor:pointer;transition:border-color .15s,background .15s;
-  display:grid;grid-template-columns:44px 1fr 22px;gap:8px;align-items:center;
-  font-family:var(--fb);color:var(--text)}
-.result-item:hover{border-color:#3a3a55;background:#1e1e2e}
-.result-item.active{border-color:var(--accent);background:#0d2e24}
-.result-ts{font-family:var(--fm);font-size:11px;color:var(--muted)}
-.result-text{font-size:13.5px;line-height:1.5;word-break:break-word}
-.result-text mark{background:rgba(110,231,183,.18);color:var(--accent);border-radius:3px;padding:0 2px}
-.result-icon{font-size:12px;color:var(--muted);text-align:right}
-.result-item.active .result-icon{color:var(--accent)}
-.state-msg{padding:30px 16px;text-align:center;color:var(--muted);font-size:14px;line-height:1.8}
-.state-msg .big{font-size:32px;display:block;margin-bottom:8px}
-@media(max-width:760px){
-  .layout{grid-template-columns:1fr}
-  .search-row{grid-template-columns:1fr 1fr}
-  .search-row input{grid-column:1/-1}
-  .btn-search{grid-column:1/-1}
-  .results-card{max-height:50vh}
-}
+.hint{margin-top:10px;padding:10px 14px;background:#131320;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);line-height:1.7}
+.rcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;max-height:calc(100vh - 180px);display:flex;flex-direction:column}
+.rhead{padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.rtitle{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px}
+.rcnt{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);background:var(--surface2);padding:3px 10px;border-radius:99px}
+.rlist{overflow-y:auto;flex:1;padding:10px;display:flex;flex-direction:column;gap:6px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.ri{width:100%;text-align:left;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px 13px;cursor:pointer;transition:border-color .15s,background .15s;display:grid;grid-template-columns:44px 1fr 22px;gap:8px;align-items:center;font-family:'DM Sans',sans-serif;color:var(--text)}
+.ri:hover{border-color:#3a3a55;background:#1e1e2e}
+.ri.on{border-color:var(--accent);background:#0d2e24}
+.ri-ts{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.ri-txt{font-size:13.5px;line-height:1.5;word-break:break-word}
+.ri-txt mark{background:rgba(110,231,183,.18);color:var(--accent);border-radius:3px;padding:0 2px}
+.ri-ic{font-size:12px;color:var(--muted);text-align:right}
+.ri.on .ri-ic{color:var(--accent)}
+.smsg{padding:30px 16px;text-align:center;color:var(--muted);font-size:14px;line-height:1.8}
+.smsg .big{font-size:32px;display:block;margin-bottom:8px}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.srow{grid-template-columns:1fr auto}.srow input{grid-column:1/-1}.rcard{max-height:50vh}}
 </style>
 </head>
 <body>
@@ -99,7 +69,7 @@ header{padding:28px 0 20px;display:flex;align-items:baseline;gap:16px}
     <div class="tagline">원어민 발음을 자막으로 검색하고 들어보세요</div>
   </header>
 
-  <div class="search-row">
+  <div class="srow">
     <input id="q" type="text" placeholder="검색할 단어 또는 문장 입력…" value="comfortable" autocomplete="off">
     <select id="lang">
       <option value="en">🇺🇸 English</option>
@@ -108,218 +78,156 @@ header{padding:28px 0 20px;display:flex;align-items:baseline;gap:16px}
       <option value="ru">🇷🇺 Русский</option>
       <option value="ar">🇸🇦 العربية</option>
     </select>
-    <select id="accent">
-      <option value="us">US 억양</option>
-      <option value="uk">UK 억양</option>
-      <option value="any">모든 억양</option>
-    </select>
     <button class="btn-search" id="btnSearch">SEARCH</button>
   </div>
 
-  <div id="errorBar" class="error-bar"></div>
+  <div class="err" id="errBar"></div>
 
   <div class="layout">
     <div>
-      <div class="player-card">
-        <div class="player-wrap"><div id="yt-player"></div></div>
-        <div class="player-footer">
-          <button class="btn-ctrl" id="btnPrev">◀ 이전</button>
-          <button class="btn-ctrl" id="btnReplay">↺</button>
-          <button class="btn-ctrl" id="btnLoop">🔁 반복</button>
-          <button class="btn-ctrl" id="btnNext">다음 ▶</button>
-          <div class="clip-counter"><strong id="curIdx">–</strong> / <span id="totIdx">–</span></div>
-          <div class="spinner" id="spinner"></div>
+      <div class="pcard">
+        <div class="pwrap"><div id="ytp"></div></div>
+        <div class="pfoot">
+          <button class="bc" id="bPrev">◀ 이전</button>
+          <button class="bc" id="bReplay">↺</button>
+          <button class="bc" id="bLoop">🔁 반복</button>
+          <button class="bc" id="bNext">다음 ▶</button>
+          <div class="cnt"><strong id="ci">–</strong> / <span id="ct">–</span></div>
+          <div class="spin" id="spin"></div>
         </div>
       </div>
-      <div class="caption-display" id="captionDisplay">
-        <span class="placeholder">검색어를 입력하고 SEARCH를 눌러 시작하세요.</span>
-      </div>
-      <div class="loop-banner" id="loopBanner">
-        <div class="loop-dot"></div>구간 반복 재생 중 — 반복 버튼을 다시 누르면 정지
-      </div>
-      <div class="hint-bar">
-        ✅ <strong>YouTube Search API + RapidAPI 자막</strong> 연동<br>
-        💡 일일 쿼터: YouTube 검색 100회/일 (무료)
-      </div>
+      <div class="cdisplay" id="cdis"><span class="ph">검색어를 입력하고 SEARCH를 눌러 시작하세요.</span></div>
+      <div class="lbanner" id="lb"><div class="ldot"></div>구간 반복 재생 중 — 반복 버튼을 다시 누르면 정지</div>
+      <div class="hint">✅ <strong>YouTube Search API + RapidAPI 자막</strong> 연동 | 💡 일일 쿼터: 검색 약 100회/일 (무료)</div>
     </div>
-
-    <div class="results-card">
-      <div class="results-header">
-        <span class="results-title">RESULTS</span>
-        <span class="results-count" id="resultCount">–</span>
-      </div>
-      <div class="results-list" id="resultsList">
-        <div class="state-msg"><span class="big">🎙</span>단어를 검색하면<br>자막이 포함된 구간이 나타납니다.</div>
-      </div>
+    <div class="rcard">
+      <div class="rhead"><span class="rtitle">RESULTS</span><span class="rcnt" id="rcnt">–</span></div>
+      <div class="rlist" id="rlist"><div class="smsg"><span class="big">🎙</span>단어를 검색하면<br>자막이 포함된 구간이 나타납니다.</div></div>
     </div>
   </div>
 </div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-// ── CONFIG ──────────────────────────────────
-const YT_API_KEY   = "AIzaSyCK7SlC5X2mEO8tQr0rI6lLOOFo_1-Svwo";
-const RAPIDAPI_KEY = "43e4bbd8a9msh514bcb3ea6ba362p19196ajsn2052ebecf41e";
-const RAPIDAPI_HOST= "youtube-captions-transcript-subtitles-video-combiner.p.rapidapi.com";
-const SEARCH_COUNT = 10;
+// ─── CONFIG ────────────────────────────────────────
+var YT_KEY  = "AIzaSyCK7SlC5X2mEO8tQr0rI6lLOOFo_1-Svwo";
+var RA_KEY  = "43e4bbd8a9msh514bcb3ea6ba362p19196ajsn2052ebecf41e";
+var RA_HOST = "youtube-captions-transcript-subtitles-video-combiner.p.rapidapi.com";
 
-// ── STATE ───────────────────────────────────
-var player = null;
-var ytReady = false;
-var clips   = [];
-var cur     = 0;
-var loopOn  = false;
-var loopTimer = null;
-var lastQuery = "";
+// ─── STATE ─────────────────────────────────────────
+var player=null, clips=[], cur=0, loopOn=false, loopTm=null, lastQ="";
 
-// ── IFrame API ──────────────────────────────
-function onYouTubeIframeAPIReady() {
-  ytReady = true;
-  player = new YT.Player("yt-player", {
-    height:"100%", width:"100%",
-    playerVars:{rel:0, playsinline:1, cc_load_policy:0},
+// ─── YouTube IFrame ────────────────────────────────
+function onYouTubeIframeAPIReady(){
+  player = new YT.Player("ytp",{
+    height:"100%",width:"100%",
+    playerVars:{rel:0,playsinline:1,cc_load_policy:0},
     events:{}
   });
 }
 
-// ── 유틸 ────────────────────────────────────
-function fmt(sec) {
-  var m = Math.floor(sec/60), s = Math.floor(sec%60);
-  return m+":"+(s<10?"0"+s:s);
+// ─── 유틸 ──────────────────────────────────────────
+function fmt(s){var m=Math.floor(s/60),sec=Math.floor(s%60);return m+":"+(sec<10?"0":"")+sec;}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function hl(text,q){
+  if(!q) return esc(text);
+  var re=new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");
+  return esc(text).replace(re,"<mark>$1</mark>");
+}
+function showErr(m){var e=document.getElementById("errBar");e.textContent=m;e.classList.add("show");}
+function clearErr(){document.getElementById("errBar").classList.remove("show");}
+function setSpin(on){document.getElementById("spin").classList.toggle("show",on);}
+function setList(html){document.getElementById("rlist").innerHTML=html;}
+function smsg(ico,msg){return '<div class="smsg"><span class="big">'+ico+'</span>'+msg+'</div>';}
+
+// ─── YouTube Search ────────────────────────────────
+async function searchVids(q,lang){
+  var p=new URLSearchParams({part:"id",q:q,type:"video",videoCaption:"closedCaption",
+    relevanceLanguage:lang,maxResults:10,key:YT_KEY});
+  var r=await fetch("https://www.googleapis.com/youtube/v3/search?"+p);
+  if(!r.ok){var e=await r.json().catch(function(){return{};});throw new Error((e.error&&e.error.message)||"YouTube API 오류 "+r.status);}
+  var d=await r.json();
+  return (d.items||[]).map(function(i){return i.id.videoId;}).filter(Boolean);
 }
 
-function escHtml(s) {
-  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-}
+// ─── RapidAPI 자막 ─────────────────────────────────
+async function fetchSub(videoId,lang){
+  // 언어 fallback 순서
+  var langs=[lang];
+  if(lang!=="en") langs.push("en");
+  langs=langs.filter(function(v,i,a){return a.indexOf(v)===i;});
 
-function highlight(text, q) {
-  if (!q) return escHtml(text);
-  var re = new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")", "gi");
-  return escHtml(text).replace(re, "<mark>$1</mark>");
-}
-
-function showError(msg) {
-  var el = document.getElementById("errorBar");
-  el.textContent = msg; el.classList.add("show");
-}
-function clearError() { document.getElementById("errorBar").classList.remove("show"); }
-function setSpinner(on) { document.getElementById("spinner").classList.toggle("show", on); }
-
-// ── YouTube Search API ───────────────────────
-async function searchVideoIds(q, lang) {
-  var params = new URLSearchParams({
-    part:"id", q:q, type:"video",
-    videoCaption:"closedCaption",
-    relevanceLanguage:lang,
-    maxResults:SEARCH_COUNT,
-    key:YT_API_KEY
-  });
-  var r = await fetch("https://www.googleapis.com/youtube/v3/search?"+params);
-  if (!r.ok) {
-    var err = await r.json().catch(function(){return {};});
-    throw new Error((err.error && err.error.message) || "YouTube API 오류 "+r.status);
-  }
-  var data = await r.json();
-  return (data.items||[]).map(function(item){return item.id.videoId;}).filter(Boolean);
-}
-
-// ── RapidAPI 자막 fetch ──────────────────────
-async function fetchTranscript(videoId, lang) {
-  // uz 자막 없는 영상은 en으로 fallback
-  var langs = (lang === "uz") ? ["uz", "en"] : (lang === "ar") ? ["ar", "en"] : [lang, "en"];
-  // 중복 제거
-  langs = langs.filter(function(v,i,a){return a.indexOf(v)===i;});
-
-  for (var li = 0; li < langs.length; li++) {
-    try {
-      var url = "https://"+RAPIDAPI_HOST+"/download-json/"+videoId
-        +"?language="+langs[li]+"&response_mode=default";
-      var r = await fetch(url, {
+  for(var i=0;i<langs.length;i++){
+    try{
+      var url="https://"+RA_HOST+"/download-json/"+videoId+"?language="+langs[i]+"&response_mode=default";
+      var r=await fetch(url,{
         method:"GET",
-        headers:{
-          "x-rapidapi-key":  RAPIDAPI_KEY,
-          "x-rapidapi-host": RAPIDAPI_HOST,
-          "Content-Type":"application/json"
-        },
-        signal: AbortSignal.timeout(8000)
+        headers:{"x-rapidapi-key":RA_KEY,"x-rapidapi-host":RA_HOST,"Content-Type":"application/json"},
+        signal:AbortSignal.timeout(8000)
       });
-      if (!r.ok) continue;
-      var data = await r.json();
-      if (!Array.isArray(data) || !data.length) continue;
-      return data.map(function(item){
-        return {
-          start: parseFloat(item.start||0),
-          dur:   parseFloat(item.dur||2),
-          text:  String(item.text||"")
-            .replace(/&#39;/g,"'").replace(/&amp;/g,"&")
-            .replace(/&quot;/g,'"').replace(/
-/g," ").trim()
-        };
-      }).filter(function(c){return c.text.length>0;});
-    } catch(_){ continue; }
+      if(!r.ok) continue;
+      var data=await r.json();
+      if(!Array.isArray(data)||!data.length) continue;
+      return data.map(function(item){return{
+        start:parseFloat(item.start||0),
+        dur:parseFloat(item.dur||2),
+        text:String(item.text||"").replace(/&#39;/g,"'").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/\n/g," ").trim()
+      };}).filter(function(c){return c.text.length>0;});
+    }catch(e){continue;}
   }
   return null;
 }
 
-// ── 검색 실행 ────────────────────────────────
-async function doSearch() {
-  clearError();
-  var q    = document.getElementById("q").value.trim();
-  var lang = document.getElementById("lang").value;
-  if (!q) { showError("검색어를 입력하세요."); return; }
+// ─── 검색 ──────────────────────────────────────────
+async function doSearch(){
+  clearErr();
+  var q=document.getElementById("q").value.trim();
+  var lang=document.getElementById("lang").value;
+  if(!q){showErr("검색어를 입력하세요.");return;}
 
-  lastQuery = q;
-  clips = []; cur = 0;
-  document.getElementById("resultsList").innerHTML =
-    '<div class="state-msg"><span class="big">⏳</span>YouTube에서 영상 검색 중…</div>';
-  document.getElementById("resultCount").textContent = "–";
-  document.getElementById("curIdx").textContent = "–";
-  document.getElementById("totIdx").textContent = "–";
-  setSpinner(true);
+  lastQ=q; clips=[]; cur=0;
+  setList(smsg("⏳","YouTube에서 영상 검색 중…"));
+  document.getElementById("rcnt").textContent="–";
+  document.getElementById("ci").textContent="–";
+  document.getElementById("ct").textContent="–";
+  setSpin(true);
 
-  var videoIds = [];
-  try {
-    videoIds = await searchVideoIds(q, lang);
-  } catch(e) {
-    setSpinner(false);
-    showError("YouTube 검색 실패: "+e.message);
-    document.getElementById("resultsList").innerHTML =
-      '<div class="state-msg"><span class="big">⚠️</span>'+escHtml(e.message)+'</div>';
+  var vids=[];
+  try{vids=await searchVids(q,lang);}
+  catch(e){
+    setSpin(false);
+    showErr("YouTube 검색 실패: "+e.message);
+    setList(smsg("⚠️",esc(e.message)));
     return;
   }
 
-  if (!videoIds.length) {
-    setSpinner(false);
-    showError('"'+q+'" 관련 영상을 찾지 못했습니다.');
-    document.getElementById("resultsList").innerHTML =
-      '<div class="state-msg"><span class="big">😶</span>결과 없음</div>';
-    document.getElementById("resultCount").textContent = "0";
+  if(!vids.length){
+    setSpin(false);
+    showErr('"'+q+'" 관련 영상을 찾지 못했습니다.');
+    setList(smsg("😶","결과 없음"));
+    document.getElementById("rcnt").textContent="0";
     return;
   }
 
-  document.getElementById("resultsList").innerHTML =
-    '<div class="state-msg"><span class="big">📄</span>영상 '+videoIds.length+'개에서 자막 분석 중…</div>';
+  setList(smsg("📄","영상 "+vids.length+"개에서 자막 분석 중…"));
 
-  // 병렬 자막 fetch
-  var results = await Promise.all(videoIds.map(async function(vid){
-    try {
-      var captions = await fetchTranscript(vid, lang);
-      if (!captions) return [];
-      return captions
-        .filter(function(c){ return c.text.toLowerCase().indexOf(q.toLowerCase()) !== -1; })
-        .map(function(h){ return Object.assign({videoId:vid}, h); });
-    } catch(_){ return []; }
+  var results=await Promise.all(vids.map(async function(vid){
+    try{
+      var caps=await fetchSub(vid,lang);
+      if(!caps) return [];
+      return caps.filter(function(c){return c.text.toLowerCase().indexOf(q.toLowerCase())!==-1;})
+                 .map(function(h){return{videoId:vid,start:h.start,dur:h.dur,text:h.text};});
+    }catch(e){return [];}
   }));
 
-  var found = [].concat.apply([], results);
-  setSpinner(false);
-  clips = found;
+  var found=[].concat.apply([],results);
+  setSpin(false);
+  clips=found;
 
-  if (!found.length) {
-    showError('영상은 찾았지만 "'+q+'" 가 포함된 자막이 없습니다. 다른 단어를 시도해보세요.');
-    document.getElementById("resultsList").innerHTML =
-      '<div class="state-msg"><span class="big">😶</span>자막 매칭 없음</div>';
-    document.getElementById("resultCount").textContent = "0";
+  if(!found.length){
+    showErr('영상은 찾았지만 "'+q+'" 가 포함된 자막이 없습니다. 다른 단어를 시도해보세요.');
+    setList(smsg("😶","자막 매칭 없음"));
+    document.getElementById("rcnt").textContent="0";
     return;
   }
 
@@ -327,84 +235,71 @@ async function doSearch() {
   playAt(0);
 }
 
-// ── 결과 렌더 ────────────────────────────────
-function renderResults() {
-  var list = document.getElementById("resultsList");
-  document.getElementById("resultCount").textContent = clips.length+"개";
-  list.innerHTML = "";
-  clips.forEach(function(c, i){
-    var btn = document.createElement("button");
-    btn.className = "result-item"+(i===cur?" active":"");
-    btn.innerHTML =
-      '<span class="result-ts">'+fmt(c.start)+'</span>'+
-      '<span class="result-text">'+highlight(c.text, lastQuery)+'</span>'+
-      '<span class="result-icon">'+(i===cur?"▶":"›")+'</span>';
-    btn.addEventListener("click", function(){ playAt(i); });
+// ─── 결과 렌더 ─────────────────────────────────────
+function renderResults(){
+  document.getElementById("rcnt").textContent=clips.length+"개";
+  var list=document.getElementById("rlist");
+  list.innerHTML="";
+  clips.forEach(function(c,i){
+    var btn=document.createElement("button");
+    btn.className="ri"+(i===cur?" on":"");
+    btn.innerHTML='<span class="ri-ts">'+fmt(c.start)+'</span>'
+      +'<span class="ri-txt">'+hl(c.text,lastQ)+'</span>'
+      +'<span class="ri-ic">'+(i===cur?"▶":"›")+'</span>';
+    btn.addEventListener("click",function(){playAt(i);});
     list.appendChild(btn);
   });
 }
 
-function updateHighlight() {
-  var items = document.querySelectorAll(".result-item");
-  items.forEach(function(el, i){
-    el.classList.toggle("active", i===cur);
-    el.querySelector(".result-icon").textContent = i===cur?"▶":"›";
+function updateHL(){
+  document.querySelectorAll(".ri").forEach(function(el,i){
+    el.classList.toggle("on",i===cur);
+    el.querySelector(".ri-ic").textContent=i===cur?"▶":"›";
   });
-  var active = document.querySelector(".result-item.active");
-  if (active) active.scrollIntoView({block:"nearest", behavior:"smooth"});
+  var a=document.querySelector(".ri.on");
+  if(a) a.scrollIntoView({block:"nearest",behavior:"smooth"});
 }
 
-// ── 재생 제어 ────────────────────────────────
-function playAt(idx) {
-  if (!clips.length) return;
+// ─── 재생 ──────────────────────────────────────────
+function playAt(idx){
+  if(!clips.length) return;
   stopLoop();
-  cur = idx;
-  var c = clips[cur];
-  document.getElementById("curIdx").textContent = cur+1;
-  document.getElementById("totIdx").textContent = clips.length;
-  document.getElementById("captionDisplay").innerHTML = highlight(c.text, lastQuery);
-  if (player && player.loadVideoById) {
-    player.loadVideoById({videoId:c.videoId, startSeconds:c.start});
-  }
-  updateHighlight();
-  if (loopOn) startLoop();
+  cur=idx;
+  var c=clips[cur];
+  document.getElementById("ci").textContent=cur+1;
+  document.getElementById("ct").textContent=clips.length;
+  document.getElementById("cdis").innerHTML=hl(c.text,lastQ);
+  if(player&&player.loadVideoById) player.loadVideoById({videoId:c.videoId,startSeconds:c.start});
+  updateHL();
+  if(loopOn) startLoop();
 }
 
-function stopLoop() { clearInterval(loopTimer); }
-
-function startLoop() {
+function stopLoop(){clearInterval(loopTm);}
+function startLoop(){
   stopLoop();
-  if (!clips.length || !player) return;
-  var c = clips[cur];
-  var end = c.start + c.dur + 0.4;
-  loopTimer = setInterval(function(){
-    try {
-      var t = player.getCurrentTime ? player.getCurrentTime() : 0;
-      if (t >= end) { player.seekTo(c.start, true); player.playVideo(); }
-    } catch(_){}
-  }, 200);
+  if(!clips.length||!player) return;
+  var c=clips[cur],end=c.start+c.dur+0.4;
+  loopTm=setInterval(function(){
+    try{var t=player.getCurrentTime?player.getCurrentTime():0;
+      if(t>=end){player.seekTo(c.start,true);player.playVideo();}
+    }catch(e){}
+  },200);
 }
 
-// ── 이벤트 바인딩 ────────────────────────────
-document.getElementById("btnSearch").addEventListener("click", doSearch);
-document.getElementById("q").addEventListener("keydown", function(e){
-  if (e.key==="Enter") doSearch();
+// ─── 버튼 이벤트 ───────────────────────────────────
+document.getElementById("btnSearch").addEventListener("click",doSearch);
+document.getElementById("q").addEventListener("keydown",function(e){if(e.key==="Enter")doSearch();});
+document.getElementById("bPrev").addEventListener("click",function(){if(cur>0)playAt(cur-1);});
+document.getElementById("bNext").addEventListener("click",function(){if(cur<clips.length-1)playAt(cur+1);});
+document.getElementById("bReplay").addEventListener("click",function(){
+  if(!clips.length||!player) return;
+  player.seekTo(clips[cur].start,true);player.playVideo();
 });
-document.getElementById("btnPrev").addEventListener("click", function(){
-  if (cur>0) playAt(cur-1);
-});
-document.getElementById("btnNext").addEventListener("click", function(){
-  if (cur<clips.length-1) playAt(cur+1);
-});
-document.getElementById("btnReplay").addEventListener("click", function(){
-  if (!clips.length||!player) return;
-  player.seekTo(clips[cur].start, true); player.playVideo();
-});
-document.getElementById("btnLoop").addEventListener("click", function(){
-  loopOn = !loopOn;
-  document.getElementById("btnLoop").classList.toggle("active", loopOn);
-  document.getElementById("loopBanner").classList.toggle("show", loopOn);
-  if (loopOn) startLoop(); else stopLoop();
+document.getElementById("bLoop").addEventListener("click",function(){
+  loopOn=!loopOn;
+  document.getElementById("bLoop").classList.toggle("on",loopOn);
+  document.getElementById("lb").classList.toggle("show",loopOn);
+  if(loopOn) startLoop(); else stopLoop();
 });
 </script>
 </body>
