@@ -441,7 +441,7 @@
 // ──────────────────────────────────────────────
 //  CONFIG
 // ──────────────────────────────────────────────
-const BACKEND_URL  = null; // "https://PROJECT.supabase.co/functions/v1/get-transcript"
+const BACKEND_URL  = "https://ihxiywffzmvrwmqvatzt.supabase.co/functions/v1/get-transcript"; // "https://PROJECT.supabase.co/functions/v1/get-transcript"
 const YT_API_KEY   = "AIzaSyCK7SlC5X2mEO8tQr0rI6lLOOFo_1-Svwo";
 const SEARCH_COUNT = 10; // 한 번에 검색할 영상 수 (최대 50, 쿼터 주의)
 
@@ -532,10 +532,16 @@ async function fetchTranscript(videoId, lang) {
   if (BACKEND_URL) {
     const r = await fetch(BACKEND_URL, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloeGl5d2Zmem12cndtcXZhdHp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MDAyODAsImV4cCI6MjA5NjA3NjI4MH0.1TaqnPK_cXhzdV9DGEzjyUsHQsQkR3FipRfa5tvLL5o"
+      },
       body: JSON.stringify({ videoId, lang })
     });
-    if (!r.ok) throw new Error(`Backend error ${r.status}`);
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err?.error || err?.message || `Backend error ${r.status}`);
+    }
     return r.json();
   }
 
