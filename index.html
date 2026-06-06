@@ -534,7 +534,6 @@ async function fetchTranscript(videoId, lang) {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloeGl5d2Zmem12cndtcXZhdHp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MDAyODAsImV4cCI6MjA5NjA3NjI4MH0.1TaqnPK_cXhzdV9DGEzjyUsHQsQkR3FipRfa5tvLL5o"
       },
       body: JSON.stringify({ videoId, lang })
     });
