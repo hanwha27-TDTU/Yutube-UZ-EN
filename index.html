@@ -113,7 +113,7 @@ header{padding:28px 0 20px;display:flex;align-items:baseline;gap:16px}
       </div>
       <div class="cdisplay" id="cdis"><span class="ph">검색어를 입력하고 SEARCH를 눌러 시작하세요.</span></div>
       <div class="lbanner" id="lb"><div class="ldot"></div>구간 반복 재생 중 — 반복 버튼을 다시 누르면 정지</div>
-      <div class="hint">✅ <strong>뉴스·토크쇼 위주 검색</strong> (카테고리 25+22) | 영상 최대 50개 | 💡 일일 쿼터 약 100회/일 (무료)</div>
+      <div class="hint">✅ <strong>뉴스·인터뷰 위주 검색</strong> | 영상 최대 50개 (단어 검색 + 인터뷰/뉴스 키워드 병렬) | 💡 일일 쿼터 약 100회/일</div>
     </div>
     <div class="rcard">
       <div class="rhead"><span class="rtitle">RESULTS</span><span class="rcnt" id="rcnt">–</span></div>
@@ -157,25 +157,34 @@ function setSpin(on){document.getElementById("spin").classList.toggle("show",on)
 function setList(html){document.getElementById("rlist").innerHTML=html;}
 function smsg(ico,msg){return '<div class="smsg"><span class="big">'+ico+'</span>'+msg+'</div>';}
 
-// ─── YouTube Search (뉴스+토크쇼 위주, 최대 50개) ───
-// 카테고리: 25=뉴스/정치, 22=People&Blogs(인터뷰/토크)
+// ─── YouTube Search (뉴스/인터뷰 위주, 최대 50개) ───
+// videoCategoryId는 relevanceLanguage와 충돌하므로 사용하지 않음.
+// 대신 일반 검색 + 인터뷰/뉴스 키워드 검색을 병렬로 합산한다.
 async function searchVids(q,lang){
-  var base={
-    part:"id,snippet",q:q,type:"video",
-    videoCaption:"closedCaption",
-    relevanceLanguage:lang,maxResults:25,key:YT_KEY
-  };
-  // 뉴스(25) + 토크/블로그(22) 병렬 검색
-  var fetches=["25","22"].map(async function(catId){
+  function makeParams(extra){
+    return new URLSearchParams(Object.assign({
+      part:"id,snippet", type:"video",
+      videoCaption:"closedCaption",
+      relevanceLanguage:lang, maxResults:25, key:YT_KEY
+    }, extra));
+  }
+
+  // 쿼리 1: 단어 그대로
+  // 쿼리 2: 단어 + 인터뷰/뉴스 힌트 (구어체 영상 유도)
+  var queries=[
+    makeParams({q:q}),
+    makeParams({q:q+" interview OR news OR talk"})
+  ];
+
+  var responses=await Promise.all(queries.map(async function(p){
     try{
-      var p=new URLSearchParams(Object.assign({},base,{videoCategoryId:catId}));
       var r=await fetch("https://www.googleapis.com/youtube/v3/search?"+p);
       if(!r.ok) return [];
       var d=await r.json();
       return d.items||[];
     }catch(e){return [];}
-  });
-  var responses=await Promise.all(fetches);
+  }));
+
   // 중복 제거 후 합산
   var seen={}, allItems=[];
   responses.forEach(function(items){
@@ -186,14 +195,7 @@ async function searchVids(q,lang){
       allItems.push(item);
     });
   });
-  if(!allItems.length){
-    // 카테고리 필터 없이 fallback (결과가 0일 때)
-    try{
-      var p2=new URLSearchParams(Object.assign({},base,{maxResults:25}));
-      var r2=await fetch("https://www.googleapis.com/youtube/v3/search?"+p2);
-      if(r2.ok){var d2=await r2.json();allItems=d2.items||[];}
-    }catch(e){}
-  }
+
   // 메타데이터 저장
   allItems.forEach(function(item){
     var vid=item.id.videoId;
@@ -202,6 +204,7 @@ async function searchVids(q,lang){
       thumb:(item.snippet&&item.snippet.thumbnails&&item.snippet.thumbnails.default&&item.snippet.thumbnails.default.url)||""
     };
   });
+
   return allItems.map(function(i){return i.id.videoId;}).filter(Boolean);
 }
 
@@ -262,7 +265,7 @@ async function doSearch(){
     return;
   }
 
-  setList(smsg("📄","뉴스/토크쇼 영상 "+vids.length+"개에서 자막 분석 중…"));
+  setList(smsg("📄","영상 "+vids.length+"개에서 자막 분석 중…"));
 
   var results=await Promise.all(vids.map(async function(vid){
     try{
