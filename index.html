@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>USMLE Quiz App</title>
+<title>Dr. Bugeon의 USMLE 퀴즈앱</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#f5f4f0;color:#1a1a1a;min-height:100vh}
@@ -12,7 +12,7 @@ select,input,textarea{font-family:inherit}
 
 /* NAV */
 nav{background:#26215C;padding:0 1.5rem;display:flex;align-items:center;gap:0;height:52px;position:sticky;top:0;z-index:100}
-.nav-logo{color:#fff;font-weight:600;font-size:15px;margin-right:auto}
+.nav-logo{color:#fff;font-weight:600;font-size:15px;margin-right:12px}
 .nav-logo span{color:#AFA9EC;font-size:11px;font-weight:400;margin-left:6px;vertical-align:2px}
 .nav-tab{color:#AFA9EC;background:none;border:none;padding:0 14px;height:52px;font-size:13px;font-weight:500;cursor:pointer;transition:color 0.15s;border-bottom:2px solid transparent}
 .nav-tab:hover{color:#fff}
@@ -182,11 +182,13 @@ select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-
 .sync-dot.err{background:#E24B4A}
 .sync-dot.loading{background:#BA7517;animation:pulse .8s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.nav-sync{display:flex;align-items:center;gap:7px;color:#AFA9EC;font-size:12px;cursor:pointer;padding:0 10px;height:52px;border:none;background:none;white-space:nowrap}
+.nav-sync{display:flex;align-items:center;gap:7px;color:#AFA9EC;font-size:12px;cursor:pointer;padding:0 10px;height:52px;border:none;background:none;white-space:nowrap;margin-left:auto}
 .nav-sync:hover{color:#fff}
-.nav-save-btn{display:flex;align-items:center;gap:5px;background:#1D9E75;color:#fff;border:none;padding:0 14px;height:34px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin:auto 10px auto 4px;transition:background .15s;white-space:nowrap}
-.nav-save-btn:hover{background:#0F6E56}
-.nav-save-btn.saving{background:#BA7517;pointer-events:none}
+.nav-action-btn{display:flex;align-items:center;gap:6px;color:#fff;border:none;padding:0 14px;height:34px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin:auto 6px;transition:filter .15s,background .15s;white-space:nowrap}
+.nav-action-btn:hover{filter:brightness(1.08)}
+.nav-data-btn{background:#185FA5}
+.nav-dev-btn{background:#534AB7;margin-right:0}
+.nav-action-btn.saving{background:#BA7517;pointer-events:none}
 .sb-modal-overlay{display:none;position:fixed;inset:0;background:rgba(8,12,20,.78);z-index:300;align-items:center;justify-content:center}
 .sb-modal-overlay.open{display:flex}
 .sb-modal{background:#151922;border:1.5px solid #2F6B3E;border-radius:14px;width:100%;max-width:880px;max-height:92vh;overflow:auto;padding:1.75rem 2rem;margin:1rem;color:#E6EDF3;box-shadow:0 22px 60px rgba(0,0,0,.35)}
@@ -219,13 +221,46 @@ select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-
 .sync-badge.syncing{background:#FFF8E6;color:#854F0B;border:1px solid #EF9F27;opacity:1;animation:pulse .8s infinite}
 .sync-badge.ok{background:#E1F5EE;color:#0F6E56;border:1px solid #5DCAA5;opacity:1}
 .sync-badge.err{background:#FCEBEB;color:#A32D2D;border:1px solid #F09595;opacity:1}
+.data-modal-overlay,.dev-modal-overlay{display:none;position:fixed;inset:0;background:rgba(8,12,20,.78);z-index:320;align-items:flex-start;justify-content:center;overflow:auto;padding:1.25rem}
+.data-modal-overlay.open,.dev-modal-overlay.open{display:flex}
+.data-modal,.dev-modal{width:100%;max-width:920px;background:#151922;color:#E6EDF3;border:1.5px solid #303849;border-radius:14px;box-shadow:0 22px 60px rgba(0,0,0,.35);margin:0 auto 2rem}
+.data-modal{max-width:760px;border-color:#3B6D9E}
+.dm-head,.dev-head{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid #303849}
+.dm-head h3,.dev-head h3{font-size:20px;font-weight:800;margin:0;color:#E6EDF3}
+.modal-x{width:46px;height:46px;border-radius:12px;border:1.5px solid #303849;background:#20242C;color:#8B949E;font-size:28px;line-height:1;cursor:pointer}
+.modal-x:hover{color:#fff;border-color:#58606D}
+.dm-body,.dev-body{padding:1.5rem}
+.dm-note{font-size:14px;color:#8B949E;line-height:1.7;margin-bottom:1rem}
+.dm-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dm-card{background:#0F131A;border:1.5px solid #303849;border-radius:12px;padding:1rem}
+.dm-card h4{font-size:15px;margin:0 0 6px;color:#E6EDF3}
+.dm-card p{font-size:12px;line-height:1.6;color:#8B949E;margin:0 0 12px}
+.dm-btn{width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #303849;background:#202434;color:#E6EDF3;font-size:14px;font-weight:800;cursor:pointer;margin-top:8px}
+.dm-btn.primary{background:#2F6B3E;color:#DFFFE7;border-color:#2F6B3E}
+.dm-btn.blue{border-color:#5C8DFF;color:#79A4FF}
+.dm-btn.gold{border-color:#D29922;color:#F2C96D}
+.dm-btn.saving{background:#BA7517;color:#fff;border-color:#BA7517;pointer-events:none}
+.dm-btn:hover{filter:brightness(1.08)}
+.dev-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1.25rem}
+.dev-info-card{background:#0F131A;border:1.5px solid #303849;border-radius:12px;padding:1.1rem 1.25rem}
+.dev-label{font-size:13px;font-weight:800;color:#8B949E;margin-bottom:12px}
+.dev-value{font-size:17px;line-height:1.45;color:#E6EDF3}
+.dev-desc{font-size:14px;line-height:1.7;color:#8B949E;margin:1rem 0 1.2rem}
+.dev-section-title{font-size:18px;font-weight:800;color:#E6EDF3;margin:0 0 .75rem}
+.update-card{border:1.5px solid #303849;border-radius:12px;background:#1D2330;padding:1rem 1.25rem;margin-bottom:12px}
+.update-card.latest{background:#17241D;border-color:#3C7A45}
+.update-card h4{font-size:17px;margin:0 0 10px;color:#E6EDF3}
+.update-card.latest h4{color:#7EE787}
+.update-card ul{margin:0;padding-left:18px;color:#8B949E;font-size:14px;line-height:1.7}
+.dev-close-wide,.dm-close-wide{width:100%;padding:14px 18px;border-radius:10px;border:1.5px solid #303849;background:#202434;color:#8B949E;font-size:15px;font-weight:800;cursor:pointer;margin-top:8px}
 .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
 @media (max-width:520px){
   nav{height:auto;min-height:52px;padding:6px 10px;flex-wrap:wrap;gap:4px}
   .nav-logo{width:100%;margin-right:0}
   .nav-tab{height:36px;padding:0 10px}
-  .nav-sync,.nav-save-btn{height:32px;margin:0}
+  .nav-sync,.nav-action-btn{height:32px;margin:0}
+  .dm-grid,.dev-info-grid{grid-template-columns:1fr}
   .toast{max-width:calc(100vw - 24px);white-space:normal;text-align:center}
 }
 </style>
@@ -240,12 +275,121 @@ select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-
     <span class="sync-dot" id="sync-dot"></span>
     <span id="sync-label">동기화</span>
   </button>
-  <button class="nav-save-btn" onclick="saveAppState()" id="nav-save-btn" title="현재 문제은행을 HTML 백업 파일로 다운로드">
-    💾 HTML 백업
+  <button class="nav-action-btn nav-data-btn" onclick="openDataModal()" id="nav-data-btn" title="백업, 복원, 가져오기, 내보내기">
+    📁 데이터 관리
+  </button>
+  <button class="nav-action-btn nav-dev-btn" onclick="openDevInfoModal()" id="nav-dev-btn" title="개발자 정보">
+    👨‍💻 개발자
   </button>
 </nav>
 <div class="toast" id="toast"></div>
 <div class="sync-badge" id="sync-badge"></div>
+
+<!-- DATA MANAGEMENT MODAL -->
+<div class="data-modal-overlay" id="data-modal">
+  <div class="data-modal">
+    <div class="dm-head">
+      <h3>📁 데이터 관리</h3>
+      <button class="modal-x" onclick="closeDataModal()" title="닫기">×</button>
+    </div>
+    <div class="dm-body">
+      <p class="dm-note">백업과 파일 입출력은 Supabase 동기화와 별개입니다. 클라우드 최종본을 바꾸려면 동기화 창의 기기→최종본 덮어쓰기를 사용하세요.</p>
+      <div class="dm-grid">
+        <div class="dm-card">
+          <h4>전체 백업</h4>
+          <p>문제, stem, 해설, 카테고리, 난이도, 생성/수정 시간을 모두 보존하는 JSON 백업입니다.</p>
+          <button class="dm-btn primary" onclick="exportFullBackup()">⬇ 전체 백업 내보내기</button>
+          <button class="dm-btn blue" onclick="openFullBackupImport('replace')">⬆ 전체 백업 가져오기 · 교체</button>
+          <button class="dm-btn" onclick="openFullBackupImport('merge')">＋ 전체 백업 가져오기 · 병합</button>
+          <input type="file" id="full-backup-upload" accept=".json,application/json" style="display:none" onchange="importFullBackup(this)">
+        </div>
+        <div class="dm-card">
+          <h4>앱 파일 백업</h4>
+          <p>현재 문제은행을 이 HTML 앱 파일 안에 구워 넣어 다운로드합니다. 오프라인 보관용입니다.</p>
+          <button class="dm-btn primary" id="html-backup-btn" onclick="saveAppState()">💾 HTML 앱 백업</button>
+        </div>
+        <div class="dm-card">
+          <h4>TXT 가져오기</h4>
+          <p>간단한 문제 입력용입니다. 가져온 문제는 Imported / Medium으로 추가됩니다.</p>
+          <label class="dm-btn blue" for="data-txt-upload" style="display:block;text-align:center">📄 TXT 가져오기</label>
+          <input type="file" id="data-txt-upload" accept=".txt" style="display:none" onchange="importTxt(this)">
+        </div>
+        <div class="dm-card">
+          <h4>TXT 내보내기</h4>
+          <p>질문과 보기만 포함합니다. stem, 해설, 카테고리, 난이도는 빠집니다.</p>
+          <button class="dm-btn gold" onclick="exportTxt()">💾 TXT 내보내기</button>
+        </div>
+      </div>
+      <button class="dm-close-wide" onclick="closeDataModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEVELOPER INFO MODAL -->
+<div class="dev-modal-overlay" id="dev-info-modal">
+  <div class="dev-modal">
+    <div class="dev-head">
+      <h3>👨‍💻 개발자 정보</h3>
+      <button class="modal-x" onclick="closeDevInfoModal()" title="닫기">×</button>
+    </div>
+    <div class="dev-body">
+      <div class="dev-info-grid">
+        <div class="dev-info-card">
+          <div class="dev-label">개발자</div>
+          <div class="dev-value">김부건 (Kim Bugeon)</div>
+        </div>
+        <div class="dev-info-card">
+          <div class="dev-label">소속</div>
+          <div class="dev-value">Tashkent State Medical University</div>
+        </div>
+        <div class="dev-info-card">
+          <div class="dev-label">최초 개발일</div>
+          <div class="dev-value">2026년 6월 8일</div>
+        </div>
+        <div class="dev-info-card">
+          <div class="dev-label">앱 이름 · 버전</div>
+          <div class="dev-value">Dr. Bugeon의 USMLE 퀴즈앱 v2.2</div>
+        </div>
+        <div class="dev-info-card">
+          <div class="dev-label">코드 최종 수정</div>
+          <div class="dev-value">2026년 6월 8일 18:17:21</div>
+        </div>
+        <div class="dev-info-card">
+          <div class="dev-label">현재 파일명</div>
+          <div class="dev-value">웹 앱</div>
+        </div>
+      </div>
+      <p class="dev-desc">USMLE 문항을 직접 만들고 반복 학습할 수 있도록 설계한 개인 학습용 앱입니다. 의료 판단에는 원문 출처와 최신 임상지침을 별도로 확인해야 합니다.</p>
+      <h4 class="dev-section-title">업데이트 이력</h4>
+      <div class="update-card latest">
+        <h4>최신 · 데이터 관리와 개발자 정보 UI 추가</h4>
+        <ul>
+          <li>네비의 파일 백업 버튼을 데이터 관리 창으로 이동</li>
+          <li>전체 JSON 백업 내보내기와 가져오기(교체/병합) 추가</li>
+          <li>Supabase 동기화 창에서 SQL 표시를 제거하고 운영 버튼 중심으로 정리</li>
+          <li>개발자 정보 버튼을 우측 상단에 배치</li>
+        </ul>
+      </div>
+      <div class="update-card">
+        <h4>v2.1 · Supabase 기기간 동기화 UI 정리</h4>
+        <ul>
+          <li>클라우드 최종본, 기기→최종본 덮어쓰기, 클라우드→로컬 개념으로 문구 정리</li>
+          <li>revision과 canonical snapshot 기반 동기화 구조 적용</li>
+          <li>연결 테스트 성공 시 클라우드 최종본을 먼저 불러오도록 변경</li>
+        </ul>
+      </div>
+      <div class="update-card">
+        <h4>v2.0 · 보안과 데이터 정합성 보강</h4>
+        <ul>
+          <li>HTML 저장 마커 보강과 script 종료 문자열 이스케이프 처리</li>
+          <li>보기/해설/문제은행 미리보기 HTML escape 적용</li>
+          <li>정답 보기 공백 저장 방지와 Fisher-Yates 셔플 적용</li>
+        </ul>
+      </div>
+      <button class="dev-close-wide" onclick="closeDevInfoModal()">닫기</button>
+    </div>
+  </div>
+</div>
 
 <!-- HOME PAGE -->
 <div class="page active" id="page-home">
@@ -327,9 +471,7 @@ select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-
   <div class="bank-header">
     <h2>Question Bank <span style="font-size:13px;font-weight:400;color:#888;margin-left:6px" id="bank-count"></span></h2>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <label class="btn-import" for="txt-upload" title="TXT 파일로 문제 일괄 업로드">📄 TXT 가져오기</label>
-      <input type="file" id="txt-upload" accept=".txt" style="display:none" onchange="importTxt(this)">
-      <button class="btn-import" onclick="exportTxt()" title="문제은행을 TXT 파일로 다운로드">💾 TXT 내보내기</button>
+      <button class="btn-import" onclick="openDataModal()" title="백업, 복원, 가져오기, 내보내기">📁 데이터 관리</button>
       <button class="btn-select-mode" id="btn-select-mode" onclick="toggleSelectMode()">☑ 선택 삭제</button>
       <button class="btn-add" onclick="openModal()">+ 문제 추가</button>
     </div>
@@ -1144,6 +1286,7 @@ function importTxt(input) {
     renderBank();
     renderHome();
     autoSync();  // Supabase 자동 동기화
+    showToast('📄 TXT 가져오기 완료 · ' + valid.length + '개 추가');
 
     let html = `<div style="background:#E1F5EE;border:1px solid #5DCAA5;border-radius:8px;padding:12px 16px">
       <p style="font-weight:700;color:#0F6E56;margin-bottom:4px">✅ ${valid.length}개 문제가 문제은행에 추가되었습니다!</p>
@@ -1167,11 +1310,11 @@ function importTxt(input) {
 // ─── SAVE APP STATE ────────────────────────────────────────────
 // 현재 questions 배열을 HTML 소스의 let questions = [...] 에 구워서 저장
 function saveAppState() {
-  const btn = document.getElementById('nav-save-btn');
-  if (btn) { btn.classList.add('saving'); btn.textContent = '저장 중...'; }
+  const btn = document.getElementById('html-backup-btn') || document.getElementById('nav-save-btn');
 
   // 현재 HTML 소스 가져오기
   const originalHtml = document.documentElement.outerHTML;
+  if (btn) { btn.classList.add('saving'); btn.textContent = '저장 중...'; }
 
   questions = normalizeQuestions(questions);
   if (typeof saveToCache === 'function') saveToCache(questions);
@@ -1193,9 +1336,14 @@ function saveAppState() {
 
   if (replaced === originalHtml) {
     showToast('⚠️ 저장 패턴을 찾지 못했습니다.');
-    if (btn) { btn.classList.remove('saving'); btn.textContent = '💾 HTML 백업'; }
+    if (btn) { btn.classList.remove('saving'); btn.textContent = '💾 HTML 앱 백업'; }
     return;
   }
+  replaced = replaced
+    .replace(/class="modal-overlay open"/g, 'class="modal-overlay"')
+    .replace(/class="sb-modal-overlay open"/g, 'class="sb-modal-overlay"')
+    .replace(/class="data-modal-overlay open"/g, 'class="data-modal-overlay"')
+    .replace(/class="dev-modal-overlay open"/g, 'class="dev-modal-overlay"');
 
   // DOCTYPE 포함 전체 HTML 구성
   const fullHtml = '<!DOCTYPE html>\n' + replaced;
@@ -1217,7 +1365,7 @@ function saveAppState() {
     btn.textContent = '✓ 저장 완료';
     setTimeout(() => {
       btn.classList.remove('saving');
-      btn.textContent = '💾 HTML 백업';
+      btn.textContent = '💾 HTML 앱 백업';
     }, 2000);
   }
 }
@@ -1229,7 +1377,7 @@ function exportTxt() {
     alert('문제은행이 비어 있습니다.');
     return;
   }
-  if (!confirm('TXT 내보내기는 질문과 보기만 포함합니다. Stem, 해설, 카테고리, 난이도까지 보존하려면 "HTML 백업"을 사용하세요. 계속할까요?')) {
+  if (!confirm('TXT 내보내기는 질문과 보기만 포함합니다. Stem, 해설, 카테고리, 난이도까지 보존하려면 "전체 백업" 또는 "앱 파일 백업"을 사용하세요. 계속할까요?')) {
     return;
   }
 
@@ -1262,6 +1410,115 @@ function exportTxt() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+// ─────────────────────────────────────────────────────────────
+
+let _fullBackupImportMode = 'replace';
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportFullBackup() {
+  questions = normalizeQuestions(questions);
+  const payload = {
+    app: 'Dr. Bugeon USMLE Quiz App',
+    version: '2.2',
+    exported_at: nowIso(),
+    count: questions.length,
+    questions
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  downloadBlob(blob, 'usmle_quiz_full_backup_' + stamp + '.json');
+  showToast('⬇ 전체 백업 내보내기 완료');
+}
+
+function openFullBackupImport(mode) {
+  _fullBackupImportMode = mode || 'replace';
+  const input = document.getElementById('full-backup-upload');
+  input.value = '';
+  input.click();
+}
+
+function mergeQuestionBackups(current, incoming) {
+  const byId = new Map();
+  normalizeQuestions(current).forEach(q => byId.set(String(q.id), q));
+  normalizeQuestions(incoming).forEach(q => {
+    const existing = byId.get(String(q.id));
+    if (!existing || timestampOf(q.updated_at) >= timestampOf(existing.updated_at)) {
+      byId.set(String(q.id), q);
+    }
+  });
+  return Array.from(byId.values()).sort((a, b) => timestampOf(b.updated_at) - timestampOf(a.updated_at));
+}
+
+function importFullBackup(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  input.value = '';
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      const imported = normalizeQuestions(Array.isArray(parsed) ? parsed : parsed.questions);
+      if (!imported.length) {
+        alert('가져올 문제가 없습니다.');
+        return;
+      }
+
+      const mode = _fullBackupImportMode === 'merge' ? 'merge' : 'replace';
+      const msg = mode === 'replace'
+        ? '현재 문제은행을 백업 파일의 ' + imported.length + '개 문제로 교체할까요?'
+        : '백업 파일의 ' + imported.length + '개 문제를 현재 문제은행에 병합할까요? 같은 id는 updated_at이 최신인 쪽을 유지합니다.';
+      if (!confirm(msg)) return;
+
+      questions = mode === 'replace'
+        ? imported
+        : mergeQuestionBackups(questions, imported);
+
+      saveToCache(questions);
+      renderHome();
+      renderBank();
+      showToast((mode === 'replace' ? '↺ 전체 백업 교체 완료' : '＋ 전체 백업 병합 완료') + ' · ' + questions.length + '개');
+
+      if (_sbConnected && confirm('Supabase에 연결되어 있습니다. 가져온 현재 목록을 클라우드 최종본으로 저장할까요?')) {
+        try {
+          await sbPublishSnapshot(true);
+          showToast('☁️ 가져온 데이터를 클라우드 최종본으로 저장했습니다.');
+        } catch(err) {
+          showToast('⚠️ 클라우드 최종본 저장 실패: ' + err.message, 3500);
+        }
+      }
+    } catch(err) {
+      alert('백업 파일을 읽지 못했습니다: ' + err.message);
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function openDataModal() {
+  document.getElementById('data-modal').classList.add('open');
+}
+
+function closeDataModal() {
+  document.getElementById('data-modal').classList.remove('open');
+}
+
+function openDevInfoModal() {
+  document.getElementById('dev-info-modal').classList.add('open');
+}
+
+function closeDevInfoModal() {
+  document.getElementById('dev-info-modal').classList.remove('open');
 }
 // ─────────────────────────────────────────────────────────────
 
@@ -1793,6 +2050,12 @@ async function initSupabase() {
 // 모달 오버레이 클릭 시 닫기
 document.getElementById('sb-modal').addEventListener('click', function(e) {
   if (e.target === this) closeSbModal();
+});
+document.getElementById('data-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeDataModal();
+});
+document.getElementById('dev-info-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeDevInfoModal();
 });
 
 // 앱 시작
