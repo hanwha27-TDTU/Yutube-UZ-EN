@@ -1,453 +1,1754 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ClipSpeak — 원어민 발음 검색기</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USMLE Quiz App</title>
 <style>
-:root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--border:#2a2a3d;--accent:#6ee7b7;--accent2:#f59e0b;--red:#f87171;--text:#e8e8f0;--muted:#6b6b85}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 60% 40% at 10% 0%,rgba(110,231,183,.07),transparent 60%),radial-gradient(ellipse 40% 30% at 90% 80%,rgba(245,158,11,.05),transparent 50%)}
-.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px}
-header{padding:28px 0 20px;display:flex;align-items:baseline;gap:16px}
-.logo{font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:2px;color:var(--accent);line-height:1}
-.logo span{color:var(--accent2)}
-.tagline{font-size:13px;color:var(--muted)}
-.srow{display:grid;grid-template-columns:1fr 140px auto;gap:10px;margin-bottom:28px}
-.srow input,.srow select{height:52px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:0 16px;font-size:16px;outline:none;transition:border-color .2s;font-family:'DM Sans',sans-serif}
-.srow input:focus,.srow select:focus{border-color:var(--accent)}
-.srow input::placeholder{color:var(--muted)}
-.btn-search{height:52px;padding:0 28px;background:var(--accent);color:#0a0a0f;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;cursor:pointer;white-space:nowrap}
-.btn-search:hover{opacity:.88}
-.err{display:none;margin-bottom:12px;padding:12px 16px;background:#1f0a0a;border:1px solid var(--red);border-radius:10px;color:var(--red);font-size:13px}
-.err.show{display:block}
-.layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr);gap:20px}
-.pcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-.pwrap{width:100%;aspect-ratio:16/9;background:#000}
-#ytp{width:100%;height:100%;display:block}
-.pfoot{padding:14px 16px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border)}
-.bc{height:40px;min-width:40px;padding:0 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif}
-.bc:hover{background:var(--border)}
-.bc.on{background:#0d2e24;border-color:var(--accent);color:var(--accent)}
-.cnt{margin-left:auto;font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)}
-.cnt strong{color:var(--text)}
-.spin{display:none;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .6s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
-.spin.show{display:inline-block}
-.cdisplay{margin-top:14px;min-height:72px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;font-size:18px;line-height:1.6;display:flex;align-items:center}
-.cdisplay mark{background:transparent;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px}
-.cdisplay .ph{color:var(--muted);font-size:15px}
-.lbanner{margin-top:10px;display:none;align-items:center;gap:10px;padding:9px 14px;background:#0d2e24;border:1px solid var(--accent);border-radius:8px;font-size:13px;color:var(--accent)}
-.lbanner.show{display:flex}
-.ldot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.hint{margin-top:10px;padding:10px 14px;background:#131320;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);line-height:1.7}
-.quota-bar{margin-top:6px;padding:8px 14px;background:#131320;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:10px}
-.quota-track{flex:1;height:5px;background:var(--border);border-radius:99px;overflow:hidden;min-width:80px}
-.quota-fill{height:100%;border-radius:99px;transition:width .4s;background:var(--accent)}
-.quota-fill.warn{background:var(--accent2)}
-.quota-fill.danger{background:var(--red)}
-.quota-lbl{font-family:'DM Mono',monospace;font-size:11px;white-space:nowrap}
-.rcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;max-height:calc(100vh - 180px);display:flex;flex-direction:column}
-.rhead{padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.rtitle{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px}
-.rcnt{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);background:var(--surface2);padding:3px 10px;border-radius:99px}
-.rlist{overflow-y:auto;flex:1;padding:10px;display:flex;flex-direction:column;gap:4px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
-.vid-group{margin-top:8px}.vid-group:first-child{margin-top:0}
-.vid-header{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:4px;cursor:pointer;transition:border-color .15s}
-.vid-header:hover{border-color:#3a3a55}
-.vid-header.active-vid{border-color:var(--accent2);background:#1a1500}
-.vid-thumb{width:52px;height:36px;border-radius:5px;object-fit:cover;flex-shrink:0;background:var(--border)}
-.vid-info{flex:1;min-width:0}
-.vid-title{font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
-.vid-meta{font-size:10px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace}
-.vid-badge{font-size:10px;background:var(--accent2);color:#0a0a0f;border-radius:4px;padding:1px 6px;flex-shrink:0;font-weight:600}
-.ri{width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:7px;padding:8px 10px 8px 18px;cursor:pointer;transition:border-color .15s,background .15s;display:grid;grid-template-columns:38px 1fr 18px;gap:6px;align-items:center;font-family:'DM Sans',sans-serif;color:var(--text)}
-.ri:hover{border-color:#2a2a3d;background:var(--surface2)}
-.ri.on{border-color:var(--accent);background:#0d2e24}
-.ri-ts{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)}
-.ri-txt{font-size:13px;line-height:1.5;word-break:break-word}
-.ri-txt mark{background:rgba(110,231,183,.18);color:var(--accent);border-radius:3px;padding:0 2px}
-.ri-ic{font-size:11px;color:var(--muted);text-align:right}
-.ri.on .ri-ic{color:var(--accent)}
-.smsg{padding:30px 16px;text-align:center;color:var(--muted);font-size:14px;line-height:1.8}
-.smsg .big{font-size:32px;display:block;margin-bottom:8px}
-@media(max-width:760px){.layout{grid-template-columns:1fr}.srow{grid-template-columns:1fr auto}.srow input{grid-column:1/-1}.rcard{max-height:50vh}}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f5f4f0;color:#1a1a1a;min-height:100vh}
+button{cursor:pointer;font-family:inherit}
+select,input,textarea{font-family:inherit}
+
+/* NAV */
+nav{background:#26215C;padding:0 1.5rem;display:flex;align-items:center;gap:0;height:52px;position:sticky;top:0;z-index:100}
+.nav-logo{color:#fff;font-weight:600;font-size:15px;margin-right:auto}
+.nav-logo span{color:#AFA9EC;font-size:11px;font-weight:400;margin-left:6px;vertical-align:2px}
+.nav-tab{color:#AFA9EC;background:none;border:none;padding:0 14px;height:52px;font-size:13px;font-weight:500;cursor:pointer;transition:color 0.15s;border-bottom:2px solid transparent}
+.nav-tab:hover{color:#fff}
+.nav-tab.active{color:#fff;border-bottom-color:#7F77DD}
+
+/* LAYOUT */
+.page{display:none;max-width:780px;margin:0 auto;padding:1.5rem 1rem}
+.page.active{display:block}
+
+/* HOME */
+.home-header{margin-bottom:1.5rem}
+.home-header h1{font-size:22px;font-weight:600;margin-bottom:4px}
+.home-header p{color:#666;font-size:14px}
+.filter-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem}
+.filter-label{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;background:#fff;color:#1a1a1a}
+.q-summary{margin-bottom:1.25rem}
+.q-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-size:11px;padding:3px 10px;border-radius:99px;background:#EEEDFE;color:#3C3489;font-weight:500}
+.chip.hard{background:#FCEBEB;color:#A32D2D}
+.chip.medium{background:#FAEEDA;color:#854F0B}
+.chip.easy{background:#EAF3DE;color:#3B6D11}
+.btn-start{width:100%;padding:13px;background:#3C3489;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;letter-spacing:.01em;transition:background 0.15s}
+.btn-start:hover{background:#26215C}
+.btn-start:disabled{background:#ccc;cursor:not-allowed}
+.topic-list{margin-top:1.75rem;border-top:1px solid #e5e5e5;padding-top:1.25rem}
+.topic-list h3{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.topic-row{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+.topic-row span{font-size:13px;color:#666}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:1.5rem}
+.stat-card{background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:12px 14px}
+.stat-card .val{font-size:22px;font-weight:600;color:#26215C}
+.stat-card .lbl{font-size:11px;color:#888;margin-top:2px}
+
+/* QUIZ */
+.progress-bar-wrap{margin-bottom:1.25rem}
+.progress-meta{display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px;color:#888}
+.progress-track{height:4px;background:#e5e5e5;border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:#3C3489;border-radius:99px;transition:width .4s ease}
+.q-badges{display:flex;gap:6px;margin-bottom:1rem}
+.badge{font-size:11px;padding:3px 9px;border-radius:99px;font-weight:500}
+.badge.cat{background:#EEEDFE;color:#3C3489}
+.badge.hard{background:#FCEBEB;color:#A32D2D}
+.badge.medium{background:#FAEEDA;color:#854F0B}
+.badge.easy{background:#EAF3DE;color:#3B6D11}
+.q-card{background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:1.25rem;margin-bottom:1.25rem}
+.q-stem{font-size:13px;line-height:1.7;color:#555;margin-bottom:12px}
+.q-question{font-size:15px;font-weight:600;line-height:1.5;color:#1a1a1a}
+.choice-btn{display:flex;align-items:flex-start;gap:11px;width:100%;padding:11px 13px;margin-bottom:7px;background:#fff;border:1.5px solid #e5e5e5;border-radius:10px;text-align:left;transition:all .15s}
+.choice-btn:hover:not(:disabled){border-color:#7F77DD;background:#EEEDFE}
+.choice-btn:disabled{cursor:default}
+.choice-btn.selected{border-color:#534AB7;background:#EEEDFE}
+.choice-btn.correct{border-color:#1D9E75;background:#E1F5EE}
+.choice-btn.wrong{border-color:#E24B4A;background:#FCEBEB}
+.choice-label{min-width:26px;height:26px;border-radius:50%;background:#f0f0f0;color:#666;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.choice-btn.selected .choice-label{background:#534AB7;color:#fff}
+.choice-btn.correct .choice-label{background:#1D9E75;color:#fff}
+.choice-btn.wrong .choice-label{background:#E24B4A;color:#fff}
+.choice-text{font-size:13px;line-height:1.55;color:#1a1a1a;padding-top:3px}
+.result-banner{padding:11px 15px;border-radius:10px;margin-bottom:10px;font-size:13px;font-weight:600}
+.result-banner.ok{background:#E1F5EE;color:#0F6E56;border:1px solid #5DCAA5}
+.result-banner.err{background:#FCEBEB;color:#A32D2D;border:1px solid #F09595}
+.exp-section{padding:10px 14px;border-radius:8px;background:#fff;border:1px solid #e8e8e8;border-left:3px solid #ccc;margin-bottom:8px}
+.exp-section .exp-lbl{font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.exp-section p{font-size:13px;line-height:1.6;color:#333}
+.buzzwords{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.buzzword{font-size:11px;padding:3px 9px;border-radius:99px;background:#EEEDFE;color:#3C3489;font-weight:500}
+.btn-next{width:100%;padding:12px;margin-top:14px;background:#3C3489;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;transition:background .15s}
+.btn-next:hover{background:#26215C}
+.btn-back{background:none;border:none;color:#888;font-size:13px;padding:0;margin-bottom:1rem}
+.btn-back:hover{color:#1a1a1a}
+
+/* SCORE */
+.score-wrap{text-align:center;padding:2rem 1rem}
+.score-circle{width:100px;height:100px;border-radius:50%;margin:0 auto 1.5rem;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700}
+.score-circle.great{background:#E1F5EE;border:3px solid #1D9E75;color:#0F6E56}
+.score-circle.ok{background:#FAEEDA;border:3px solid #BA7517;color:#854F0B}
+.score-circle.poor{background:#FCEBEB;border:3px solid #E24B4A;color:#A32D2D}
+.score-circle .pct{font-size:26px}
+.score-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:300px;margin:0 auto 1.75rem}
+.score-box{padding:14px;background:#fff;border:1px solid #e8e8e8;border-radius:8px}
+.score-box .sval{font-size:24px;font-weight:700}
+.score-box .slbl{font-size:12px;color:#888;margin-top:2px}
+.score-btn-row{display:flex;gap:8px;justify-content:center}
+.btn-outline{padding:10px 22px;border:1.5px solid #3C3489;color:#3C3489;background:none;border-radius:8px;font-size:13px;font-weight:600}
+.btn-solid{padding:10px 22px;background:#3C3489;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600}
+
+/* BANK (Question Bank Editor) */
+.bank-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.bank-header h2{font-size:18px;font-weight:600}
+.cat-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1.25rem}
+.cat-tab-btn{padding:6px 14px;border-radius:99px;border:1.5px solid #e5e5e5;background:#fff;font-size:12px;font-weight:600;color:#666;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.cat-tab-btn:hover{border-color:#7F77DD;color:#3C3489}
+.cat-tab-btn.active{background:#3C3489;border-color:#3C3489;color:#fff}
+.cat-tab-btn .cat-count{font-size:11px;font-weight:700;opacity:.75}
+.cat-section{margin-bottom:1.5rem}
+.cat-section-title{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between}
+/* SELECT MODE */
+.q-item{background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:1rem;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;transition:border-color .15s,background .15s}
+.q-item.checked{background:#F0F8FF;border-color:#7F77DD}
+.q-item-check{width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:#3C3489;cursor:pointer;display:none}
+.select-mode .q-item-check{display:block}
+.select-mode .q-item{cursor:pointer}
+.select-mode .q-item:hover{border-color:#AFA9EC}
+.q-item-body{flex:1;min-width:0}
+/* SELECT TOOLBAR */
+.sel-toolbar{display:none;align-items:center;gap:8px;padding:10px 14px;background:#EEEDFE;border-radius:10px;margin-bottom:10px;flex-wrap:wrap}
+.sel-toolbar.visible{display:flex}
+.sel-count{font-size:13px;font-weight:600;color:#3C3489;flex:1}
+.btn-sel-all{padding:5px 12px;background:#fff;color:#3C3489;border:1.5px solid #7F77DD;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-sel-del{padding:5px 12px;background:#E24B4A;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-sel-cancel{padding:5px 12px;background:none;color:#888;border:1.5px solid #ddd;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
+/* DELETE CAT BUTTON */
+.btn-del-cat{padding:3px 10px;background:none;color:#E24B4A;border:1px solid #F09595;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer}
+.btn-del-cat:hover{background:#FCEBEB}
+/* SELECT MODE TOGGLE */
+.btn-select-mode{padding:8px 14px;background:#fff;color:#666;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.btn-select-mode.active{background:#EEEDFE;color:#3C3489;border-color:#7F77DD}
+.btn-add{padding:8px 16px;background:#3C3489;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600}
+.btn-import{padding:8px 16px;background:#fff;color:#3C3489;border:1.5px solid #7F77DD;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.q-item{background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:1rem;margin-bottom:10px}
+.q-item-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
+.q-item-title{font-size:13px;font-weight:600;color:#1a1a1a;flex:1}
+.q-item-meta{display:flex;gap:5px;flex-shrink:0}
+.q-item-actions{display:flex;gap:6px;margin-top:8px}
+.btn-edit{padding:5px 12px;background:#EEEDFE;color:#3C3489;border:none;border-radius:6px;font-size:12px;font-weight:600}
+.btn-del{padding:5px 12px;background:#FCEBEB;color:#A32D2D;border:none;border-radius:6px;font-size:12px;font-weight:600}
+.q-item-preview{font-size:12px;color:#777;line-height:1.5}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:680px;padding:1.5rem;margin:auto}
+.modal h3{font-size:17px;font-weight:700;margin-bottom:1.25rem}
+.form-row{margin-bottom:14px}
+.form-row label{display:block;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.form-row input,.form-row textarea,.form-row select{width:100%;padding:9px 11px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;color:#1a1a1a;background:#fafafa}
+.form-row textarea{resize:vertical;min-height:80px}
+.choices-grid{display:grid;grid-template-columns:1fr;gap:8px}
+.choice-input-wrap{display:flex;align-items:center;gap:0;border:1.5px solid #e5e5e5;border-radius:10px;overflow:hidden;transition:border-color .15s,background .15s;background:#fff;cursor:pointer}
+.choice-input-wrap:hover{border-color:#b0aad8}
+.choice-input-wrap.is-correct{border-color:#1D9E75;background:#F0FBF7}
+.choice-input-wrap.is-correct .choice-letter{background:#1D9E75;color:#fff}
+.choice-input-wrap.is-correct .choice-radio-col{background:#F0FBF7}
+.choice-input-wrap.is-correct .correct-badge{display:flex}
+.choice-radio-col{width:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:10px 0;border-right:1.5px solid #e5e5e5;transition:border-color .15s}
+.choice-input-wrap.is-correct .choice-radio-col{border-right-color:#1D9E75}
+.choice-correct-radio{width:16px;height:16px;accent-color:#1D9E75;cursor:pointer;flex-shrink:0;pointer-events:none}
+.choice-letter{width:36px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#3C3489;flex-shrink:0;align-self:stretch;background:#F8F7FF;border-right:1.5px solid #e5e5e5;transition:all .15s}
+.choice-input-wrap.is-correct .choice-letter{border-right-color:#1D9E75}
+.choice-input-wrap input[type=text]{flex:1;border:none;background:transparent;padding:10px 12px;font-size:13px;color:#1a1a1a;outline:none;font-family:inherit}
+.correct-badge{display:none;align-items:center;gap:4px;padding:0 12px;font-size:12px;font-weight:600;color:#0F6E56;white-space:nowrap;flex-shrink:0}
+.choice-input-wrap span{font-size:13px;font-weight:700;color:#3C3489;width:16px}
+.choice-input-wrap input{flex:1}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;border-top:1px solid #eee;padding-top:1rem}
+.btn-cancel{padding:9px 20px;background:none;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-weight:600;color:#666}
+.btn-save{padding:9px 20px;background:#3C3489;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600}
+.section-title{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 6px}
+.wrong-grid{display:grid;gap:6px}
+.wrong-input-wrap{display:flex;align-items:center;gap:7px;width:100%}
+.wrong-input-wrap span{font-size:12px;font-weight:700;color:#E24B4A;width:20px;flex-shrink:0}
+.wrong-input-wrap input{flex:1;width:100%}
+
+/* SUPABASE SYNC */
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#888;display:inline-block;flex-shrink:0}
+.sync-dot.ok{background:#1D9E75}
+.sync-dot.err{background:#E24B4A}
+.sync-dot.loading{background:#BA7517;animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.nav-sync{display:flex;align-items:center;gap:7px;color:#AFA9EC;font-size:12px;cursor:pointer;padding:0 10px;height:52px;border:none;background:none;white-space:nowrap}
+.nav-sync:hover{color:#fff}
+.nav-save-btn{display:flex;align-items:center;gap:5px;background:#1D9E75;color:#fff;border:none;padding:0 14px;height:34px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin:auto 10px auto 4px;transition:background .15s;white-space:nowrap}
+.nav-save-btn:hover{background:#0F6E56}
+.nav-save-btn.saving{background:#BA7517;pointer-events:none}
+.sb-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center}
+.sb-modal-overlay.open{display:flex}
+.sb-modal{background:#fff;border-radius:14px;width:100%;max-width:480px;padding:1.5rem;margin:1rem}
+.sb-modal h3{font-size:16px;font-weight:700;margin-bottom:4px}
+.sb-modal p{font-size:13px;color:#888;margin-bottom:1.25rem;line-height:1.6}
+.sb-field{margin-bottom:12px}
+.sb-field label{display:block;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.sb-field input{width:100%;padding:9px 11px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-family:monospace}
+.sb-field input:focus{border-color:#7F77DD;outline:none}
+.sb-status{font-size:12px;padding:10px 14px;border-radius:8px;margin-bottom:1rem;display:none}
+.sb-status.ok{background:#E1F5EE;color:#0F6E56;display:block}
+.sb-status.err{background:#FCEBEB;color:#A32D2D;display:block}
+.sb-status.loading{background:#FFF8E6;color:#854F0B;display:block}
+.sb-btn-row{display:flex;gap:8px;justify-content:flex-end}
+.sb-btn-cancel{padding:9px 18px;background:none;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-weight:600;color:#666;cursor:pointer}
+.sb-btn-connect{padding:9px 18px;background:#3C3489;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.sb-btn-disconnect{padding:9px 18px;background:#FCEBEB;color:#A32D2D;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.sb-sync-row{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid #eee;flex-wrap:wrap}
+.sb-sync-btn{flex:1;padding:9px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid #ddd;background:#fff;color:#3C3489;min-width:120px}
+.sb-sync-btn:hover{background:#EEEDFE}
+.sb-guide{background:#F8F7FF;border-radius:8px;padding:10px 14px;font-size:12px;color:#3C3489;margin-bottom:1rem;line-height:1.7}
+.sb-guide code{background:#EEEDFE;padding:1px 5px;border-radius:4px;font-family:monospace}
+.sb-guide pre{margin-top:6px;white-space:pre-wrap;word-break:break-word}
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+@media (max-width:520px){
+  nav{height:auto;min-height:52px;padding:6px 10px;flex-wrap:wrap;gap:4px}
+  .nav-logo{width:100%;margin-right:0}
+  .nav-tab{height:36px;padding:0 10px}
+  .nav-sync,.nav-save-btn{height:32px;margin:0}
+  .toast{max-width:calc(100vw - 24px);white-space:normal;text-align:center}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="logo">Clip<span>Speak</span></div>
-    <div class="tagline">원어민 발음을 자막으로 검색하고 들어보세요</div>
-  </header>
-  <div class="srow">
-    <input id="q" type="text" placeholder="검색할 단어 또는 문장 입력…" value="comfortable" autocomplete="off">
-    <select id="lang">
-      <option value="en">🇺🇸 English</option>
-      <option value="uz">🇺🇿 O'zbekcha</option>
-      <option value="ko">🇰🇷 한국어</option>
-      <option value="ru">🇷🇺 Русский</option>
-      <option value="ar">🇸🇦 العربية</option>
-    </select>
-    <button class="btn-search" id="btnSearch">SEARCH</button>
+
+<nav>
+  <div class="nav-logo">USMLE Quiz <span>Step 1 & 2 CK</span></div>
+  <button class="nav-tab active" onclick="showPage('home')">Home</button>
+  <button class="nav-tab" onclick="showPage('bank')">Question Bank</button>
+  <button class="nav-sync" onclick="openSbModal()" id="nav-sync-btn" title="Supabase 클라우드 동기화">
+    <span class="sync-dot" id="sync-dot"></span>
+    <span id="sync-label">Cloud</span>
+  </button>
+  <button class="nav-save-btn" onclick="saveAppState()" id="nav-save-btn" title="현재 문제은행을 HTML 파일에 저장">
+    💾 최종 저장
+  </button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div class="home-header">
+    <h1>Practice Quiz</h1>
+    <p>High-yield clinical vignettes with detailed explanations</p>
   </div>
-  <div class="err" id="errBar"></div>
-  <div class="layout">
+
+  <div class="stat-grid">
+    <div class="stat-card"><div class="val" id="stat-total">0</div><div class="lbl">Total questions</div></div>
+    <div class="stat-card"><div class="val" id="stat-filtered">0</div><div class="lbl">After filters</div></div>
+    <div class="stat-card"><div class="val" id="stat-cats">0</div><div class="lbl">Categories</div></div>
+  </div>
+
+  <div class="filter-row">
     <div>
-      <div class="pcard">
-        <div class="pwrap"><div id="ytp"></div></div>
-        <div class="pfoot">
-          <button class="bc" id="bPrev">◀ 이전</button>
-          <button class="bc" id="bReplay">↺</button>
-          <button class="bc" id="bLoop">🔁 반복</button>
-          <button class="bc" id="bNext">다음 ▶</button>
-          <div class="cnt"><strong id="ci">–</strong> / <span id="ct">–</span></div>
-          <div class="spin" id="spin"></div>
-        </div>
-      </div>
-      <div class="cdisplay" id="cdis"><span class="ph">검색어를 입력하고 SEARCH를 눌러 시작하세요.</span></div>
-      <div class="lbanner" id="lb"><div class="ldot"></div>구간 반복 재생 중 — 반복 버튼을 다시 누르면 정지</div>
-      <div class="hint">✅ <strong>토크쇼·뉴스 위주 검색</strong> | 단어 검색 1회 = 200유닛 소비</div>
-      <div class="quota-bar">
-        <span class="quota-lbl">📊 오늘 쿼터</span>
-        <div class="quota-track"><div class="quota-fill" id="qFill" style="width:0%"></div></div>
-        <span class="quota-lbl" id="qText">0 / 10,000</span>
-        <span class="quota-lbl" id="qReset" style="color:var(--muted);font-size:10px"></span>
-      </div>
+      <div class="filter-label">Category</div>
+      <select id="filter-cat" onchange="updateFilters()"><option value="All">All</option></select>
     </div>
-    <div class="rcard">
-      <div class="rhead"><span class="rtitle">RESULTS</span><span class="rcnt" id="rcnt">–</span></div>
-      <div class="rlist" id="rlist"><div class="smsg"><span class="big">🎙</span>단어를 검색하면<br>자막이 포함된 구간이 나타납니다.</div></div>
+    <div>
+      <div class="filter-label">Difficulty</div>
+      <select id="filter-diff" onchange="updateFilters()">
+        <option value="All">All</option>
+        <option value="Easy">Easy</option>
+        <option value="Medium">Medium</option>
+        <option value="Hard">Hard</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="q-summary">
+    <div class="filter-label">Available questions</div>
+    <div class="q-chips" id="q-chips"></div>
+  </div>
+
+  <button class="btn-start" id="btn-start" onclick="startQuiz()">Start Quiz</button>
+
+  <div class="topic-list" id="topic-list"></div>
+</div>
+
+<!-- QUIZ PAGE -->
+<div class="page" id="page-quiz">
+  <button class="btn-back" onclick="showPage('home')">← Back to home</button>
+  <div class="progress-bar-wrap">
+    <div class="progress-meta"><span id="prog-label">Question 1 of 5</span><span id="prog-pct">0%</span></div>
+    <div class="progress-track"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+  <div class="q-badges" id="q-badges"></div>
+  <div class="q-card">
+    <div class="q-stem" id="q-stem"></div>
+    <div class="q-question" id="q-question"></div>
+  </div>
+  <div id="choices-wrap"></div>
+  <div id="explanation-wrap"></div>
+  <button class="btn-next" id="btn-next" style="display:none" onclick="nextQuestion()">Next Question →</button>
+</div>
+
+<!-- SCORE PAGE -->
+<div class="page" id="page-score">
+  <div class="score-wrap">
+    <div class="score-circle" id="score-circle">
+      <div class="pct" id="score-pct">0%</div>
+    </div>
+    <h2 id="score-grade" style="margin-bottom:4px;font-size:20px"></h2>
+    <p id="score-sub" style="color:#888;font-size:14px;margin-bottom:1.5rem"></p>
+    <div class="score-grid">
+      <div class="score-box"><div class="sval" id="sc-correct" style="color:#0F6E56">0</div><div class="slbl">Correct</div></div>
+      <div class="score-box"><div class="sval" id="sc-wrong" style="color:#A32D2D">0</div><div class="slbl">Incorrect</div></div>
+    </div>
+    <div class="score-btn-row">
+      <button class="btn-outline" onclick="startQuiz()">Retry</button>
+      <button class="btn-solid" onclick="showPage('home')">Back to Home</button>
     </div>
   </div>
 </div>
 
-<script src="https://www.youtube.com/iframe_api"></script>
+<!-- BANK PAGE -->
+<div class="page" id="page-bank">
+  <div class="bank-header">
+    <h2>Question Bank <span style="font-size:13px;font-weight:400;color:#888;margin-left:6px" id="bank-count"></span></h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <label class="btn-import" for="txt-upload" title="TXT 파일로 문제 일괄 업로드">📄 TXT 가져오기</label>
+      <input type="file" id="txt-upload" accept=".txt" style="display:none" onchange="importTxt(this)">
+      <button class="btn-import" onclick="exportTxt()" title="문제은행을 TXT 파일로 다운로드">💾 TXT 내보내기</button>
+      <button class="btn-select-mode" id="btn-select-mode" onclick="toggleSelectMode()">☑ 선택 삭제</button>
+      <button class="btn-add" onclick="openModal()">+ 문제 추가</button>
+    </div>
+  </div>
+
+  <!-- TXT FORMAT GUIDE -->
+  <div id="import-guide" style="background:#F8F7FF;border:1px dashed #AFA9EC;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.25rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:12px;font-weight:700;color:#3C3489;text-transform:uppercase;letter-spacing:.05em">📋 TXT 파일 형식 안내</span>
+      <button onclick="document.getElementById('import-guide').style.display='none'" style="background:none;border:none;color:#999;font-size:16px;cursor:pointer">×</button>
+    </div>
+    <pre style="font-size:12px;color:#444;line-height:1.7;font-family:'Courier New',monospace;white-space:pre-wrap"># 질문 내용
++ 정답 보기
+- 오답 보기1
+- 오답 보기2
+- 오답 보기3
+
+# 다음 질문
++ 정답
+- 오답1
+- 오답2</pre>
+    <p style="font-size:11px;color:#888;margin-top:8px"><code style="background:#eee;padding:1px 4px;border-radius:3px">#</code> = 질문 &nbsp;|&nbsp; <code style="background:#eee;padding:1px 4px;border-radius:3px">+</code> = 정답 &nbsp;|&nbsp; <code style="background:#eee;padding:1px 4px;border-radius:3px">-</code> = 오답 &nbsp;|&nbsp; 보기는 2~5개 가능, 자동으로 섞임</p>
+  </div>
+
+  <!-- IMPORT RESULT -->
+  <div id="import-result" style="display:none;margin-bottom:1rem"></div>
+
+  <!-- SELECT TOOLBAR -->
+  <div class="sel-toolbar" id="sel-toolbar">
+    <span class="sel-count" id="sel-count">0개 선택됨</span>
+    <button class="btn-sel-all" onclick="selectAllVisible()">전체 선택</button>
+    <button class="btn-sel-all" onclick="deselectAll()">선택 해제</button>
+    <button class="btn-sel-del" onclick="deleteSelected()">🗑 선택 삭제</button>
+    <button class="btn-sel-cancel" onclick="toggleSelectMode()">취소</button>
+  </div>
+  <div id="bank-list"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modal-title">Add Question</h3>
+    <div class="form-row">
+      <label>Category</label>
+      <input type="text" id="f-cat" placeholder="e.g. Cardiology" list="cat-list">
+      <datalist id="cat-list"></datalist>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-row">
+        <label>Difficulty</label>
+        <select id="f-diff"><option>Easy</option><option selected>Medium</option><option>Hard</option></select>
+      </div>
+      <div class="form-row" style="display:none">
+        <label>Correct Answer</label>
+        <select id="f-correct"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="I">I</option><option value="J">J</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Clinical Stem (vignette)</label>
+      <textarea id="f-stem" placeholder="Patient presentation, vitals, labs..."></textarea>
+    </div>
+    <div class="form-row">
+      <label>Question</label>
+      <input type="text" id="f-question" placeholder="What is the most likely diagnosis?">
+    </div>
+    <div class="form-row">
+      <label>Answer Choices <span style="font-weight:400;color:#aaa;font-size:11px">(최소 2개 · 최대 10개 · 라디오 버튼으로 정답 선택)</span></label>
+      <div class="choices-grid" id="choices-inputs">
+        <div class="choice-input-wrap" id="wrap-A" onclick="setCorrect('A')">
+          <div class="choice-radio-col"><input class="choice-correct-radio" type="radio" name="correct-choice" value="A"></div>
+          <div class="choice-letter">A</div>
+          <input type="text" id="f-A" placeholder="Choice A (필수)" onclick="event.stopPropagation()">
+          <div class="correct-badge">&#10003; 정답</div>
+        </div>
+        <div class="choice-input-wrap" id="wrap-B" onclick="setCorrect('B')">
+          <div class="choice-radio-col"><input class="choice-correct-radio" type="radio" name="correct-choice" value="B"></div>
+          <div class="choice-letter">B</div>
+          <input type="text" id="f-B" placeholder="Choice B (필수)" onclick="event.stopPropagation()">
+          <div class="correct-badge">&#10003; 정답</div>
+        </div>
+        <div class="choice-input-wrap" id="wrap-C" onclick="setCorrect('C')">
+          <div class="choice-radio-col"><input class="choice-correct-radio" type="radio" name="correct-choice" value="C"></div>
+          <div class="choice-letter">C</div>
+          <input type="text" id="f-C" placeholder="Choice C" onclick="event.stopPropagation()">
+          <div class="correct-badge">&#10003; 정답</div>
+        </div>
+        <div class="choice-input-wrap" id="wrap-D" onclick="setCorrect('D')">
+          <div class="choice-radio-col"><input class="choice-correct-radio" type="radio" name="correct-choice" value="D"></div>
+          <div class="choice-letter">D</div>
+          <input type="text" id="f-D" placeholder="Choice D" onclick="event.stopPropagation()">
+          <div class="correct-badge">&#10003; 정답</div>
+        </div>
+        <div class="choice-input-wrap" id="wrap-E" onclick="setCorrect('E')">
+          <div class="choice-radio-col"><input class="choice-correct-radio" type="radio" name="correct-choice" value="E"></div>
+          <div class="choice-letter">E</div>
+          <input type="text" id="f-E" placeholder="Choice E" onclick="event.stopPropagation()">
+          <div class="correct-badge">&#10003; 정답</div>
+        </div>
+        <div class="choice-input-wrap" id="wrap-F" onclick="setCorrect('F')">
+          <div class="choice-radio-col"><input class="choice-correct-radio" type="radio" name="correct-choice" value="F"></div>
+          <div class="choice-letter">F</div>
+          <input type="text" id="f-F" placeholder="Choice F" onclick="event.stopPropagation()">
+          <div class="correct-badge">&#10003; 정답</div>
+        </div>
+        <div class="choice-input-wrap" id="wrap-G" onclick="setCorrect('G')">
+          <div class="choice-radio-col"><input class="choice-correct-radio" type="radio" name="correct-choice" value="G"></div>
+          <div class="choice-letter">G</div>
+          <input type="text" id="f-G" placeholder="Choice G" onclick="event.stopPropagation()">
+          <div class="correct-badge">&#10003; 정답</div>
+        </div>
+        <div class="choice-input-wrap" id="wrap-H" onclick="setCorrect('H')">
+          <div class="choice-radio-col"><input class="choice-correct-radio" type="radio" name="correct-choice" value="H"></div>
+          <div class="choice-letter">H</div>
+          <input type="text" id="f-H" placeholder="Choice H" onclick="event.stopPropagation()">
+          <div class="correct-badge">&#10003; 정답</div>
+        </div>
+        <div class="choice-input-wrap" id="wrap-I" onclick="setCorrect('I')">
+          <div class="choice-radio-col"><input class="choice-correct-radio" type="radio" name="correct-choice" value="I"></div>
+          <div class="choice-letter">I</div>
+          <input type="text" id="f-I" placeholder="Choice I" onclick="event.stopPropagation()">
+          <div class="correct-badge">&#10003; 정답</div>
+        </div>
+        <div class="choice-input-wrap" id="wrap-J" onclick="setCorrect('J')">
+          <div class="choice-radio-col"><input class="choice-correct-radio" type="radio" name="correct-choice" value="J"></div>
+          <div class="choice-letter">J</div>
+          <input type="text" id="f-J" placeholder="Choice J" onclick="event.stopPropagation()">
+          <div class="correct-badge">&#10003; 정답</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Explanation (optional but recommended)</div>
+    <div class="form-row"><label>Why correct</label><textarea id="f-correct-why" rows="2" placeholder="Mechanism / reasoning for correct answer"></textarea></div>
+    <div class="form-row"><label>Pathophysiology</label><input type="text" id="f-pathophys" placeholder="1-2 line pathophys"></div>
+    <div class="form-row"><label>Key Labs</label><input type="text" id="f-labs" placeholder="TSH↑, T4↓, anti-TPO ↑"></div>
+    <div class="form-row"><label>First-line Treatment</label><input type="text" id="f-tx" placeholder="Treatment / management"></div>
+    <div class="form-row"><label>⚠ Trap / Distractor</label><textarea id="f-trap" rows="2" placeholder="Common mistake or trick the question writer uses"></textarea></div>
+    <div class="form-row"><label>Buzzwords (comma separated)</label><input type="text" id="f-buzz" placeholder="WBC casts, pyelonephritis, E. coli"></div>
+
+    <div class="section-title">Why each wrong answer is wrong</div>
+    <div class="wrong-grid">
+      <div class="wrong-input-wrap"><span>A</span><input type="text" id="f-wA" placeholder="Why A is wrong"></div>
+      <div class="wrong-input-wrap"><span>B</span><input type="text" id="f-wB" placeholder="Why B is wrong"></div>
+      <div class="wrong-input-wrap"><span>C</span><input type="text" id="f-wC" placeholder="Why C is wrong"></div>
+      <div class="wrong-input-wrap"><span>D</span><input type="text" id="f-wD" placeholder="Why D is wrong"></div>
+      <div class="wrong-input-wrap"><span>E</span><input type="text" id="f-wE" placeholder="Why E is wrong"></div>
+      <div class="wrong-input-wrap"><span>F</span><input type="text" id="f-wF" placeholder="Why F is wrong"></div>
+      <div class="wrong-input-wrap"><span>G</span><input type="text" id="f-wG" placeholder="Why G is wrong"></div>
+      <div class="wrong-input-wrap"><span>H</span><input type="text" id="f-wH" placeholder="Why H is wrong"></div>
+      <div class="wrong-input-wrap"><span>I</span><input type="text" id="f-wI" placeholder="Why I is wrong"></div>
+      <div class="wrong-input-wrap"><span>J</span><input type="text" id="f-wJ" placeholder="Why J is wrong"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveQuestion()">Save Question</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// ─── CONFIG ────────────────────────────────────────
-var YT_KEY  = "AIzaSyCK7SlC5X2mEO8tQr0rI6lLOOFo_1-Svwo";
-var RA_KEY  = "43e4bbd8a9msh514bcb3ea6ba362p19196ajsn2052ebecf41e";
-var RA_HOST = "youtube-captions-transcript-subtitles-video-combiner.p.rapidapi.com";
+let questions = /*Q_START*/ [
+  {id:1,category:"Cardiovascular System",difficulty:"Hard",stem:"A 58-year-old man presents to the ED with crushing substernal chest pain radiating to the left arm for 2 hours. He is diaphoretic and in moderate distress. BP 100/70 mmHg, HR 110/min. ECG shows ST elevations in leads II, III, and aVF. Troponin I is elevated.",question:"Which coronary artery is most likely occluded?",choices:[{id:"A",text:"Left anterior descending (LAD)"},{id:"B",text:"Right coronary artery (RCA)"},{id:"C",text:"Left circumflex artery (LCx)"},{id:"D",text:"Left main coronary artery"}],correct:"B",explanation:{correct_why:"ST elevations in II, III, aVF = inferior STEMI → RCA territory (supplies inferior wall and SA/AV nodes in 90% of population).",wrong_why:{A:"LAD → anterior STEMI: ST↑ in V1-V4. Septal/anterior wall.",C:"LCx → lateral STEMI: ST↑ in I, aVL, V5-V6.",D:"Left main → catastrophic, causes ST↑ in multiple territories + cardiogenic shock."},key_labs:"Troponin I ↑ (>0.04 ng/mL), CK-MB ↑, ECG ST↑ II/III/aVF",pathophys:"Plaque rupture → thrombus → complete occlusion → transmural ischemia → ST elevation",treatment:"PCI within 90 min (door-to-balloon) | Aspirin + P2Y12 inhibitor + heparin",buzzwords:["Inferior STEMI","RCA","ST↑ II/III/aVF","door-to-balloon <90min"],trap:"Bradycardia + hypotension + inferior STEMI → think RV infarct. Give IV fluids, AVOID nitrates!"}},
+  {id:2,category:"Renal, Urinary Systems & Electrolytes",difficulty:"Medium",stem:"A 32-year-old woman with recurrent UTIs presents with fever (39.2°C), right flank pain, and dysuria for 3 days. UA shows pyuria, bacteriuria, and WBC casts. Serum creatinine is 1.1 mg/dL.",question:"Which UA finding is most specific for upper urinary tract infection vs. cystitis?",choices:[{id:"A",text:"Pyuria (>10 WBC/hpf)"},{id:"B",text:"WBC casts"},{id:"C",text:"Bacteriuria"},{id:"D",text:"Positive leukocyte esterase"}],correct:"B",explanation:{correct_why:"WBC casts form in renal tubules → pathognomonic for renal parenchymal inflammation. Cannot form in bladder.",wrong_why:{A:"Pyuria present in both cystitis AND pyelonephritis — not specific.",C:"Bacteriuria present in both — not specific for upper tract.",D:"Leukocyte esterase = proxy for pyuria. Same limitation."},key_labs:"UA: WBC casts ✓, pyuria, bacteriuria | CBC: WBC ↑ with left shift",pathophys:"Ascending E. coli infection → renal pelvis → tubular inflammation → WBC shed into lumen → form casts",treatment:"Mild: oral fluoroquinolone 7d | Severe: IV ceftriaxone → step down",buzzwords:["WBC casts","pyelonephritis","ascending E. coli","tubular origin"],trap:"RBC casts → glomerulonephritis (NOT pyelonephritis). Know your cast types!"}},
+  {id:3,category:"Pulmonary & Critical Care",difficulty:"Hard",stem:"A 45-year-old man is intubated in the ICU for septic shock. He is on FiO₂ 0.8, PEEP 12 cmH₂O. ABG: pH 7.28, PaO₂ 68 mmHg. CXR shows bilateral patchy infiltrates. PCWP <18 mmHg. P/F ratio = 85.",question:"What is the most appropriate next ventilator management step?",choices:[{id:"A",text:"Increase tidal volume to 10 mL/kg IBW"},{id:"B",text:"Lung-protective: TV 6 mL/kg IBW, plateau pressure <30 cmH₂O"},{id:"C",text:"Decrease PEEP to reduce barotrauma"},{id:"D",text:"Switch to pressure control ventilation immediately"}],correct:"B",explanation:{correct_why:"P/F = 85 → Severe ARDS (Berlin <100). ARDSNet: TV 6 mL/kg IBW + Pplat <30 = lung-protective. Reduces VILI and mortality.",wrong_why:{A:"TV 10 mL/kg → volutrauma/barotrauma → worsens ARDS. Historical, now contraindicated.",C:"Decreasing PEEP in severe ARDS → derecruitment → worse hypoxemia.",D:"Mode (pressure vs volume) is NOT the priority — protective parameters are."},key_labs:"P/F = PaO₂/FiO₂ = 68/0.8 = 85 | Berlin: mild 200-300, mod 100-200, severe <100",pathophys:"DAD → ↑ capillary permeability → protein-rich edema → surfactant loss → stiff lungs (↓ compliance)",treatment:"TV 6 mL/kg IBW | Pplat <30 | PEEP titration | Prone if P/F <150 | NMB if refractory",buzzwords:["Severe ARDS","P/F ratio","ARDSNet","lung-protective","Berlin criteria"],trap:"Use IBW not actual weight! Obese patients get lower TV. IBW male = 50 + 2.3 × (inches over 5ft)"}},
+  {id:4,category:"Endocrine, Diabetes & Metabolism",difficulty:"Medium",stem:"A 28-year-old woman 8 months postpartum presents with weight gain, fatigue, constipation, dry skin, cold intolerance. Labs: TSH 12.5 mIU/L, Free T4 0.6 ng/dL. Anti-TPO antibodies markedly elevated.",question:"What is the most likely diagnosis?",choices:[{id:"A",text:"Postpartum thyroiditis, hypothyroid phase"},{id:"B",text:"Graves' disease"},{id:"C",text:"Subacute (De Quervain) thyroiditis"},{id:"D",text:"Central hypothyroidism"}],correct:"A",explanation:{correct_why:"Classic: within 1 year postpartum + anti-TPO ↑↑ + TSH↑/T4↓ = hypothyroid phase of postpartum Hashimoto's.",wrong_why:{B:"Graves = hyperthyroidism (TSH↓, T4↑), exophthalmos. TSI is hallmark, not anti-TPO.",C:"De Quervain = painful thyroid + viral prodrome + ESR ↑ + self-limited. Anti-TPO usually negative.",D:"Central hypothyroid = LOW TSH + low T4 (pituitary failure). Here TSH is HIGH → primary."},key_labs:"TSH ↑↑ | Free T4 ↓ | Anti-TPO ↑↑ | CBC may show anemia",pathophys:"Postpartum immune rebound → Th1 attack on thyroid follicular cells → ↓ T4/T3 → ↑ TSH (feedback)",treatment:"Levothyroxine (T4 replacement) | Recheck TSH 6-8 weeks | Many recover, some permanent",buzzwords:["Postpartum thyroiditis","anti-TPO","TSH↑ T4↓","primary hypothyroidism"],trap:"Primary hypothyroid = TSH↑. Central/secondary = TSH↓. Always identify which axis is failing!"}},
+  {id:5,category:"Hematology & Oncology",difficulty:"Hard",stem:"A 72-year-old man has fatigue, weight loss, 4-cm splenomegaly. CBC: WBC 85,000 (92% mature lymphocytes), Hgb 9.8, Plt 90k. Smear shows smudge cells. Flow: CD5+, CD19+, CD20+dim, CD23+, sIgM+dim, FMC7−.",question:"What is the most likely diagnosis?",choices:[{id:"A",text:"Mantle cell lymphoma (MCL)"},{id:"B",text:"Chronic lymphocytic leukemia (CLL)"},{id:"C",text:"Hairy cell leukemia (HCL)"},{id:"D",text:"Follicular lymphoma"}],correct:"B",explanation:{correct_why:"CLL: CD5+ CD19+ CD23+ (CD5 co-expression with B markers) + dim sIg + smudge cells + FMC7−. Most common adult leukemia.",wrong_why:{A:"MCL: CD5+ CD19+ but CD23 NEGATIVE, FMC7+, cyclin D1+, t(11;14).",C:"HCL: CD103+, CD11c+, TRAP+, 'hairy' projections. Causes dry tap on BM bx.",D:"Follicular: CD10+, BCL2+, t(14;18). CD5 NEGATIVE."},key_labs:"WBC ↑↑ lymphocytosis | Smudge cells (pathognomonic) | CD5+/CD19+/CD23+ | FISH for del(13q)",pathophys:"Monoclonal B-cell accumulation → functionally incompetent lymphocytes → marrow/spleen infiltration → cytopenias",treatment:"Watch and wait if asymptomatic | Ibrutinib (BTK inhibitor) or FCR for symptomatic disease",buzzwords:["CLL","smudge cells","CD5+ CD23+","most common adult leukemia","watch and wait"],trap:"CD5 + B markers = CLL vs MCL. CD23 differentiates: CLL = CD23+, MCL = CD23−. Don't mix!"}}
+] /*Q_END*/;
 
-// ─── 언어별 검색 쿼리 보강 키워드 ──────────────────
-// 검색 API는 딱 2번만 호출 (일반 + 뉴스/토크 키워드)
-// 총 200유닛 소비 / 검색 1회
-var LANG_BOOST = {
-  "en": "interview OR \"talk show\" OR news",
-  "uz": "suhbat OR yangiliklar OR intervyu",
-  "ko": "인터뷰 OR 뉴스 OR 토크",
-  "ru": "интервью OR новости OR ток-шоу",
-  "ar": "مقابلة OR أخبار"
-};
+let editingId = null;
+let quizQuestions = [];
+let quizIdx = 0;
+let quizScore = 0;
+let answered = false;
+const CHOICE_IDS = 'ABCDEFGHIJ'.split('');
 
-// ─── STATE ─────────────────────────────────────────
-var player=null, clips=[], cur=0, loopOn=false, loopTm=null, lastQ="";
-var vidMeta={};
+function nowIso() {
+  return new Date().toISOString();
+}
 
-// ─── YouTube IFrame ────────────────────────────────
-function onYouTubeIframeAPIReady(){
-  player=new YT.Player("ytp",{
-    height:"100%",width:"100%",
-    playerVars:{rel:0,playsinline:1,cc_load_policy:0},
-    events:{}
+function makeQuestionId() {
+  return Date.now() + Math.random();
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value);
+}
+
+function normalizeQuestion(q) {
+  const now = nowIso();
+  const base = q || {};
+  const created = base.created_at || base.updated_at || now;
+  return {
+    id: base.id ?? makeQuestionId(),
+    created_at: created,
+    updated_at: base.updated_at || created,
+    deleted_at: base.deleted_at || null,
+    category: base.category || 'Imported',
+    difficulty: base.difficulty || 'Medium',
+    stem: base.stem || '',
+    question: base.question || '',
+    choices: Array.isArray(base.choices) ? base.choices : [],
+    correct: base.correct || 'A',
+    explanation: {
+      correct_why: base.explanation?.correct_why || '',
+      pathophys: base.explanation?.pathophys || '',
+      key_labs: base.explanation?.key_labs || '',
+      treatment: base.explanation?.treatment || '',
+      trap: base.explanation?.trap || '',
+      buzzwords: Array.isArray(base.explanation?.buzzwords) ? base.explanation.buzzwords : [],
+      wrong_why: base.explanation?.wrong_why || {}
+    }
+  };
+}
+
+function normalizeQuestions(qs) {
+  return (Array.isArray(qs) ? qs : []).map(normalizeQuestion).filter(q => !q.deleted_at);
+}
+
+function shuffleArray(items) {
+  const arr = [...items];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function rememberDeletedQuestions(items) {
+  if (typeof addTombstones === 'function') addTombstones(items);
+}
+
+questions = normalizeQuestions(questions);
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const tabs = {home:0, bank:1};
+  if (tabs[name] !== undefined) document.querySelectorAll('.nav-tab')[tabs[name]].classList.add('active');
+  if (name === 'home') renderHome();
+  if (name === 'bank') renderBank();
+}
+
+function getFiltered() {
+  const cat = document.getElementById('filter-cat').value;
+  const diff = document.getElementById('filter-diff').value;
+  return questions.filter(q =>
+    (cat === 'All' || q.category === cat) &&
+    (diff === 'All' || q.difficulty === diff)
+  );
+}
+
+function renderHome() {
+  const usmle_cats = ['General Principles', 'Allergy & Immunology', 'Dermatology', 'Cardiovascular System', 'Pulmonary & Critical Care', 'Gastrointestinal & Nutrition', 'Hematology & Oncology', 'Renal, Urinary Systems & Electrolytes', 'Nervous System', 'Rheumatology/Orthopedics & Sports', 'Infectious Diseases', 'Endocrine, Diabetes & Metabolism', 'Female Reproductive System & Breast', 'Male Reproductive System', 'Pregnancy, Childbirth & Puerperium', 'Biostatistics & Epidemiology', 'Ear, Nose & Throat (ENT)', 'Psychiatric/Behavioral & Substance Use Disorder', 'Poisoning & Environmental Exposure', 'Ophthalmology', 'Social Sciences (Ethics/Legal/Professional)', 'Miscellaneous (Multisystem)'];
+  const cats = [...new Set(questions.map(q => q.category))].sort();
+  const allFilterCats = [...new Set([...usmle_cats, ...cats])].sort();
+  const sel = document.getElementById('filter-cat');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="All">All</option>' + allFilterCats.map(c => {
+    const count = questions.filter(q => q.category === c).length;
+    return `<option value="${escapeAttr(c)}"${count === 0 ? ' disabled style="color:#ccc"' : ''}>${escapeHtml(c)}${count > 0 ? ' (' + count + ')' : ''}</option>`;
+  }).join('');
+  if (allFilterCats.includes(cur)) sel.value = cur;
+  updateFilters();
+  // datalist
+  const dl = document.getElementById('cat-list');
+  const usmle = ['General Principles', 'Allergy & Immunology', 'Dermatology', 'Cardiovascular System', 'Pulmonary & Critical Care', 'Gastrointestinal & Nutrition', 'Hematology & Oncology', 'Renal, Urinary Systems & Electrolytes', 'Nervous System', 'Rheumatology/Orthopedics & Sports', 'Infectious Diseases', 'Endocrine, Diabetes & Metabolism', 'Female Reproductive System & Breast', 'Male Reproductive System', 'Pregnancy, Childbirth & Puerperium', 'Biostatistics & Epidemiology', 'Ear, Nose & Throat (ENT)', 'Psychiatric/Behavioral & Substance Use Disorder', 'Poisoning & Environmental Exposure', 'Ophthalmology', 'Social Sciences (Ethics/Legal/Professional)', 'Miscellaneous (Multisystem)'];
+  const allCats = [...new Set([...usmle, ...cats])].sort();
+  dl.innerHTML = allCats.map(c => `<option value="${escapeAttr(c)}">`).join('');
+}
+
+function updateFilters() {
+  const filtered = getFiltered();
+  document.getElementById('stat-total').textContent = questions.length;
+  document.getElementById('stat-filtered').textContent = filtered.length;
+  document.getElementById('stat-cats').textContent = [...new Set(questions.map(q => q.category))].length;
+
+  const chips = document.getElementById('q-chips');
+  if (filtered.length === 0) {
+    chips.innerHTML = '<span style="font-size:13px;color:#999">No questions match filters</span>';
+  } else {
+    chips.innerHTML = filtered.map(q => `<span class="chip ${escapeAttr(q.difficulty.toLowerCase())}">${escapeHtml(q.category)} · ${escapeHtml(q.difficulty)}</span>`).join('');
+  }
+
+  const btn = document.getElementById('btn-start');
+  btn.disabled = filtered.length === 0;
+  btn.textContent = `Start Quiz (${filtered.length} question${filtered.length !== 1 ? 's' : ''})`;
+
+  const topicWrap = document.getElementById('topic-list');
+  const cats = [...new Set(questions.map(q => q.category))].sort();
+  topicWrap.innerHTML = cats.length ? `
+    <h3>Topics in bank</h3>
+    ${cats.map(c => {
+      const qs = questions.filter(q => q.category === c);
+      return `<div class="topic-row"><span class="chip cat">${escapeHtml(c)}</span><span>${qs.length} question${qs.length !== 1 ? 's' : ''} · ${escapeHtml(qs.map(q=>q.difficulty).join(', '))}</span></div>`;
+    }).join('')}
+  ` : '';
+}
+
+function startQuiz() {
+  const filtered = getFiltered();
+  if (!filtered.length) return;
+  quizQuestions = shuffleArray(filtered);
+  quizIdx = 0; quizScore = 0; answered = false;
+  showPage('quiz');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = quizQuestions[quizIdx];
+  const total = quizQuestions.length;
+  const pct = Math.round(((quizIdx + 1) / total) * 100);
+
+  document.getElementById('prog-label').textContent = `Question ${quizIdx + 1} of ${total}`;
+  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('prog-fill').style.width = pct + '%';
+
+  document.getElementById('q-badges').innerHTML = `
+    <span class="badge cat">${escapeHtml(q.category)}</span>
+    <span class="badge ${escapeAttr(q.difficulty.toLowerCase())}">${escapeHtml(q.difficulty)}</span>
+  `;
+  document.getElementById('q-stem').textContent = q.stem;
+  document.getElementById('q-question').textContent = q.question;
+
+  const cw = document.getElementById('choices-wrap');
+  cw.innerHTML = q.choices.map(c => `
+    <button class="choice-btn" id="choice-${c.id}" onclick="selectChoice('${c.id}')">
+      <span class="choice-label">${escapeHtml(c.id)}</span>
+      <span class="choice-text">${escapeHtml(c.text)}</span>
+    </button>
+  `).join('');
+
+  document.getElementById('explanation-wrap').innerHTML = '';
+  document.getElementById('btn-next').style.display = 'none';
+  answered = false;
+}
+
+function selectChoice(choiceId) {
+  if (answered) return;
+  answered = true;
+  const q = quizQuestions[quizIdx];
+  const isCorrect = choiceId === q.correct;
+  if (isCorrect) quizScore++;
+
+  q.choices.forEach(c => {
+    const btn = document.getElementById('choice-' + c.id);
+    btn.disabled = true;
+    if (c.id === q.correct) btn.classList.add('correct');
+    else if (c.id === choiceId && !isCorrect) btn.classList.add('wrong');
   });
-  updateQuotaUI();
+
+  showExplanation(q, choiceId, isCorrect);
+
+  const btnNext = document.getElementById('btn-next');
+  btnNext.style.display = 'block';
+  btnNext.textContent = (quizIdx + 1 >= quizQuestions.length) ? 'See Results →' : 'Next Question →';
 }
 
-// ─── 쿼터 관리 ─────────────────────────────────────
-function getQuota(){
-  var today=new Date().toISOString().slice(0,10);
-  try{
-    var d=JSON.parse(localStorage.getItem("cs_quota")||"{}");
-    if(d.date===today) return d.used||0;
-  }catch(e){}
-  return 0;
+function showExplanation(q, selected, isCorrect) {
+  const e = q.explanation || {};
+  const wrongReason = e.wrong_why && e.wrong_why[selected] && selected !== q.correct ? `
+    <div class="exp-section" style="border-left-color:#E24B4A">
+      <div class="exp-lbl">Why ${selected} is wrong</div>
+      <p>${escapeHtml(e.wrong_why[selected])}</p>
+    </div>` : '';
+
+  const buzz = e.buzzwords && e.buzzwords.length ? `
+    <div class="exp-section" style="border-left-color:#534AB7">
+      <div class="exp-lbl">USMLE Buzzwords</div>
+      <div class="buzzwords">${e.buzzwords.map(b => `<span class="buzzword">${escapeHtml(b)}</span>`).join('')}</div>
+    </div>` : '';
+
+  document.getElementById('explanation-wrap').innerHTML = `
+    <div style="margin-top:18px">
+      <div class="result-banner ${isCorrect ? 'ok' : 'err'}">
+        ${isCorrect ? '✓ Correct!' : `✗ Incorrect — Correct answer: ${q.correct}`}
+      </div>
+      ${wrongReason}
+      ${e.correct_why ? `<div class="exp-section" style="border-left-color:#1D9E75"><div class="exp-lbl">Why correct</div><p>${escapeHtml(e.correct_why)}</p></div>` : ''}
+      ${e.pathophys ? `<div class="exp-section" style="border-left-color:#534AB7"><div class="exp-lbl">Pathophysiology</div><p>${escapeHtml(e.pathophys)}</p></div>` : ''}
+      ${e.key_labs ? `<div class="exp-section" style="border-left-color:#185FA5"><div class="exp-lbl">Key labs</div><p>${escapeHtml(e.key_labs)}</p></div>` : ''}
+      ${e.treatment ? `<div class="exp-section" style="border-left-color:#3B6D11"><div class="exp-lbl">Treatment</div><p>${escapeHtml(e.treatment)}</p></div>` : ''}
+      ${e.trap ? `<div class="exp-section" style="border-left-color:#BA7517"><div class="exp-lbl">⚠ Trap / Distractor</div><p>${escapeHtml(e.trap)}</p></div>` : ''}
+      ${buzz}
+    </div>
+  `;
 }
-function addQuota(n){
-  var today=new Date().toISOString().slice(0,10);
-  var used=getQuota()+n;
-  try{localStorage.setItem("cs_quota",JSON.stringify({date:today,used:used}));}catch(e){}
-  updateQuotaUI(used);
-}
-function updateQuotaUI(used){
-  if(used===undefined) used=getQuota();
-  var pct=Math.min(100,Math.round(used/10000*100));
-  var fill=document.getElementById("qFill");
-  var text=document.getElementById("qText");
-  var reset=document.getElementById("qReset");
-  if(!fill) return;
-  fill.style.width=pct+"%";
-  fill.className="quota-fill"+(pct>=90?" danger":pct>=70?" warn":"");
-  text.textContent=used.toLocaleString()+" / 10,000 ("+pct+"%)";
-  text.style.color=pct>=90?"var(--red)":pct>=70?"var(--accent2)":"";
-  var h=new Date(); h.setHours(24,0,0,0);
-  var left=Math.round((h-new Date())/3600000*10)/10;
-  reset.textContent="⏱ "+left+"h 후 초기화";
+
+function nextQuestion() {
+  quizIdx++;
+  if (quizIdx >= quizQuestions.length) {
+    showScore();
+  } else {
+    renderQuestion();
+    window.scrollTo(0, 0);
+  }
 }
 
-// ─── 유틸 ──────────────────────────────────────────
-function fmt(s){var m=Math.floor(s/60),sec=Math.floor(s%60);return m+":"+(sec<10?"0":"")+sec;}
-function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
-function hl(text,q){
-  if(!q) return esc(text);
-  var re=new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");
-  return esc(text).replace(re,"<mark>$1</mark>");
+function showScore() {
+  showPage('score');
+  const total = quizQuestions.length;
+  const pct = Math.round((quizScore / total) * 100);
+  document.getElementById('score-pct').textContent = pct + '%';
+  document.getElementById('sc-correct').textContent = quizScore;
+  document.getElementById('sc-wrong').textContent = total - quizScore;
+  document.getElementById('score-sub').textContent = `${quizScore} / ${total} correct`;
+
+  const circle = document.getElementById('score-circle');
+  circle.className = 'score-circle ' + (pct >= 80 ? 'great' : pct >= 60 ? 'ok' : 'poor');
+  document.getElementById('score-grade').textContent = pct >= 80 ? 'Excellent!' : pct >= 60 ? 'Good Job' : 'Needs Review';
 }
-function showErr(m){var e=document.getElementById("errBar");e.textContent=m;e.classList.add("show");}
-function clearErr(){document.getElementById("errBar").classList.remove("show");}
-function setSpin(on){document.getElementById("spin").classList.toggle("show",on);}
-function setList(html){document.getElementById("rlist").innerHTML=html;}
-function smsg(ico,msg){return '<div class="smsg"><span class="big">'+ico+'</span>'+msg+'</div>';}
 
-// ─── YouTube Search (검색 딱 2회, 총 200유닛) ───────
-async function searchVids(q,lang){
-  var boost=LANG_BOOST[lang]||"interview OR news";
-  var base={part:"id,snippet",type:"video",videoCaption:"closedCaption",
-            relevanceLanguage:lang,maxResults:25,key:YT_KEY};
+let selectedBankCat = 'ALL';
+let _selectMode = false;
+let _selectedIds = new Set();
 
-  // 2개 쿼리 병렬 실행 (총 200유닛)
-  var reqs=await Promise.all([
-    // 1번: 단어 그대로 (관련 영상 넓게)
-    fetch("https://www.googleapis.com/youtube/v3/search?"+
-      new URLSearchParams(Object.assign({},base,{q:q}))),
-    // 2번: 단어 + 토크/뉴스 키워드 (구어체 영상 유도)
-    fetch("https://www.googleapis.com/youtube/v3/search?"+
-      new URLSearchParams(Object.assign({},base,{q:q+" "+boost})))
-  ]);
+function renderBank() {
+  const total = questions.length;
+  document.getElementById('bank-count').textContent = `(${total})`;
+  const list = document.getElementById('bank-list');
+  const toolbar = document.getElementById('sel-toolbar');
+  const modeBtn = document.getElementById('btn-select-mode');
 
-  // 쿼터 카운팅 (성공한 요청 수 × 100)
-  var successCount=reqs.filter(function(r){return r.ok;}).length;
-  if(successCount>0) addQuota(successCount*100);
-
-  // 오류 체크 (첫 번째 요청 기준)
-  if(!reqs[0].ok){
-    var e=await reqs[0].json().catch(function(){return{};});
-    throw new Error((e.error&&e.error.message)||"YouTube API 오류 "+reqs[0].status);
+  // 선택 모드 UI 동기화
+  if (_selectMode) {
+    toolbar.classList.add('visible');
+    modeBtn && modeBtn.classList.add('active');
+    list.classList.add('select-mode');
+  } else {
+    toolbar.classList.remove('visible');
+    modeBtn && modeBtn.classList.remove('active');
+    list.classList.remove('select-mode');
   }
 
-  // 결과 합산 + 중복 제거
-  var seen={}, allItems=[];
-  for(var i=0;i<reqs.length;i++){
-    if(!reqs[i].ok) continue;
-    var d=await reqs[i].json();
-    (d.items||[]).forEach(function(item){
-      var vid=item.id&&item.id.videoId;
-      if(!vid||seen[vid]) return;
-      seen[vid]=true;
-      allItems.push(item);
+  if (!total) {
+    list.innerHTML = '<p style="color:#999;font-size:14px;text-align:center;padding:2rem">문제가 없습니다. "+ 문제 추가" 또는 "TXT 가져오기"로 시작하세요.</p>';
+    return;
+  }
+
+  const cats = [...new Set(questions.map(q => q.category))].sort();
+
+  const tabsHtml = `
+    <div class="cat-tabs">
+      <button class="cat-tab-btn ${selectedBankCat === 'ALL' ? 'active' : ''}" data-bank-cat="ALL">
+        전체 <span class="cat-count">${total}</span>
+      </button>
+      ${cats.map(cat => {
+        const cnt = questions.filter(q => q.category === cat).length;
+        return `<button class="cat-tab-btn ${selectedBankCat === cat ? 'active' : ''}" data-bank-cat="${escapeAttr(cat)}">
+          ${escapeHtml(cat)} <span class="cat-count">${cnt}</span>
+        </button>`;
+      }).join('')}
+    </div>`;
+
+  const filtered = selectedBankCat === 'ALL'
+    ? questions
+    : questions.filter(q => q.category === selectedBankCat);
+
+  let itemsHtml = '';
+  if (selectedBankCat === 'ALL') {
+    itemsHtml = cats.map(cat => {
+      const qs = questions.filter(q => q.category === cat);
+      const catId = CSS.escape ? CSS.escape(cat) : cat.replace(/[^a-zA-Z0-9]/g,'_');
+      return `
+        <div class="cat-section">
+          <div class="cat-section-title">
+            <span>${escapeHtml(cat)} <span style="color:#aaa;font-weight:400">(${qs.length})</span></span>
+            <button class="btn-del-cat" data-delete-cat="${escapeAttr(cat)}">카테고리 삭제</button>
+          </div>
+          ${qs.map(q => qItemHtml(q)).join('')}
+        </div>`;
+    }).join('');
+  } else {
+    itemsHtml = `
+      <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+        <button class="btn-del-cat" data-delete-cat="${escapeAttr(selectedBankCat)}">
+          이 카테고리 전체 삭제 (${filtered.length}개)
+        </button>
+      </div>` + filtered.map(q => qItemHtml(q)).join('');
+    if (!filtered.length) itemsHtml = '<p style="color:#999;font-size:13px;padding:1rem 0">이 카테고리에 문제가 없습니다.</p>';
+  }
+
+  list.innerHTML = tabsHtml + itemsHtml;
+  list.querySelectorAll('[data-bank-cat]').forEach(btn => {
+    btn.addEventListener('click', () => setBankCat(btn.dataset.bankCat));
+  });
+  list.querySelectorAll('[data-delete-cat]').forEach(btn => {
+    btn.addEventListener('click', () => deleteByCat(btn.dataset.deleteCat));
+  });
+  updateSelCount();
+}
+
+function qItemHtml(q) {
+  const isChecked = _selectedIds.has(q.id);
+  return `
+    <div class="q-item${isChecked ? ' checked' : ''}" id="qitem-${q.id}" onclick="onItemClick(event, ${q.id})">
+      <input class="q-item-check" type="checkbox" ${isChecked ? 'checked' : ''}
+        onclick="event.stopPropagation(); toggleSelect(${q.id})" id="chk-${q.id}">
+      <div class="q-item-body">
+        <div class="q-item-header">
+          <div class="q-item-title">${escapeHtml(q.question)}</div>
+          <div class="q-item-meta">
+            <span class="badge ${escapeAttr(q.difficulty.toLowerCase())}">${escapeHtml(q.difficulty)}</span>
+          </div>
+        </div>
+        ${q.stem ? `<div class="q-item-preview">${escapeHtml(q.stem.substring(0,120))}${q.stem.length>120?'...':''}</div>` : ''}
+        <div class="q-item-actions">
+          <button class="btn-edit" onclick="event.stopPropagation();openModal(${q.id})">수정</button>
+          <button class="btn-del" onclick="event.stopPropagation();deleteQ(${q.id})">삭제</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function setBankCat(cat) {
+  selectedBankCat = cat;
+  renderBank();
+}
+
+// ── 선택 모드 토글 ────────────────────────────────
+function toggleSelectMode() {
+  _selectMode = !_selectMode;
+  if (!_selectMode) { _selectedIds.clear(); }
+  renderBank();
+}
+
+// ── 아이템 클릭 (선택 모드일 때만 체크박스 토글) ─
+function onItemClick(e, id) {
+  if (!_selectMode) return;
+  toggleSelect(id);
+}
+
+// ── 개별 선택/해제 ────────────────────────────────
+function toggleSelect(id) {
+  if (_selectedIds.has(id)) _selectedIds.delete(id);
+  else _selectedIds.add(id);
+  // DOM 직접 업데이트 (전체 re-render 없이)
+  const item = document.getElementById('qitem-' + id);
+  const chk = document.getElementById('chk-' + id);
+  if (item) item.classList.toggle('checked', _selectedIds.has(id));
+  if (chk) chk.checked = _selectedIds.has(id);
+  updateSelCount();
+}
+
+// ── 현재 보이는 문제 전체 선택 ───────────────────
+function selectAllVisible() {
+  const visible = selectedBankCat === 'ALL'
+    ? questions
+    : questions.filter(q => q.category === selectedBankCat);
+  visible.forEach(q => _selectedIds.add(q.id));
+  renderBank();
+}
+
+function deselectAll() {
+  _selectedIds.clear();
+  renderBank();
+}
+
+// ── 선택 개수 표시 ────────────────────────────────
+function updateSelCount() {
+  const el = document.getElementById('sel-count');
+  if (el) el.textContent = _selectedIds.size + '개 선택됨';
+}
+
+// ── 선택된 문제 삭제 ─────────────────────────────
+function deleteSelected() {
+  if (!_selectedIds.size) { showToast('선택된 문제가 없습니다.'); return; }
+  if (!confirm(_selectedIds.size + '개 문제를 삭제하시겠습니까?')) return;
+  const deleted = questions.filter(q => _selectedIds.has(q.id));
+  rememberDeletedQuestions(deleted);
+  questions = questions.filter(q => !_selectedIds.has(q.id));
+  _selectedIds.clear();
+  _selectMode = false;
+  renderBank(); renderHome();
+  autoSync();
+  showToast('🗑 ' + '삭제 완료');
+}
+
+// ── 카테고리 전체 삭제 ───────────────────────────
+function deleteByCat(cat) {
+  const cnt = questions.filter(q => q.category === cat).length;
+  if (!confirm('"' + cat + '" 카테고리의 문제 ' + cnt + '개를 전부 삭제하시겠습니까?')) return;
+  rememberDeletedQuestions(questions.filter(q => q.category === cat));
+  questions = questions.filter(q => q.category !== cat);
+  _selectedIds.clear();
+  if (selectedBankCat === cat) selectedBankCat = 'ALL';
+  renderBank(); renderHome();
+  autoSync();
+  showToast('🗑 ' + cat + ' (' + cnt + '개) 삭제 완료');
+}
+
+function openModal(id) {
+  editingId = id || null;
+  document.getElementById('modal-title').textContent = id ? 'Edit Question' : 'Add Question';
+  if (id) {
+    const q = questions.find(x => x.id === id);
+    document.getElementById('f-cat').value = q.category;
+    document.getElementById('f-diff').value = q.difficulty;
+    document.getElementById('f-correct').value = q.correct;
+    setCorrect(q.correct);
+    document.getElementById('f-stem').value = q.stem;
+    document.getElementById('f-question').value = q.question;
+    CHOICE_IDS.forEach(id => {
+      document.getElementById('f-'+id).value = q.choices.find(c=>c.id===id)?.text || '';
     });
+    const e = q.explanation || {};
+    document.getElementById('f-correct-why').value = e.correct_why || '';
+    document.getElementById('f-pathophys').value = e.pathophys || '';
+    document.getElementById('f-labs').value = e.key_labs || '';
+    document.getElementById('f-tx').value = e.treatment || '';
+    document.getElementById('f-trap').value = e.trap || '';
+    document.getElementById('f-buzz').value = (e.buzzwords||[]).join(', ');
+    const wy = e.wrong_why || {};
+    CHOICE_IDS.forEach(id => {
+      document.getElementById('f-w'+id).value = wy[id] || '';
+    });
+  } else {
+    ['f-cat','f-stem','f-question','f-correct-why','f-pathophys','f-labs','f-tx','f-trap','f-buzz'].forEach(id => document.getElementById(id).value = '');
+    CHOICE_IDS.forEach(id => { document.getElementById('f-'+id).value=''; document.getElementById('f-w'+id).value=''; });
+    setCorrect('A'); // 기본값 A
+    document.getElementById('f-diff').value = 'Medium';
+    document.getElementById('f-correct').value = 'A';
+  }
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  editingId = null;
+}
+
+function saveQuestion() {
+  const cat = document.getElementById('f-cat').value.trim();
+  const stem = document.getElementById('f-stem').value.trim();
+  const question = document.getElementById('f-question').value.trim();
+  const a = document.getElementById('f-A').value.trim();
+  const b = document.getElementById('f-B').value.trim();
+  const correct = document.getElementById('f-correct').value;
+  const correctText = document.getElementById('f-' + correct).value.trim();
+  if (!cat || !question || !a || !b) {
+    alert('카테고리, 질문, 보기 A, B는 필수입니다.');
+    return;
+  }
+  if (!correctText) {
+    alert('정답으로 선택한 보기 ' + correct + '의 내용을 입력해주세요.');
+    return;
+  }
+  const buzz = document.getElementById('f-buzz').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const existing = editingId ? questions.find(q => q.id === editingId) : null;
+  const ts = nowIso();
+  const newQ = {
+    id: editingId || makeQuestionId(),
+    created_at: existing?.created_at || ts,
+    updated_at: ts,
+    deleted_at: null,
+    category: cat,
+    difficulty: document.getElementById('f-diff').value,
+    stem, question,
+    choices: CHOICE_IDS.map(id => {
+      const val = document.getElementById('f-'+id).value.trim();
+      return val ? {id, text: val} : null;
+    }).filter(Boolean),
+    correct,
+    explanation: {
+      correct_why: document.getElementById('f-correct-why').value.trim(),
+      pathophys: document.getElementById('f-pathophys').value.trim(),
+      key_labs: document.getElementById('f-labs').value.trim(),
+      treatment: document.getElementById('f-tx').value.trim(),
+      trap: document.getElementById('f-trap').value.trim(),
+      buzzwords: buzz,
+      wrong_why: Object.fromEntries(CHOICE_IDS.map(id => [id, document.getElementById('f-w'+id).value.trim()]).filter(([,v])=>v))
+    }
+  };
+  if (editingId) {
+    questions = questions.map(q => q.id === editingId ? newQ : q);
+  } else {
+    questions.push(newQ);
+  }
+  closeModal();
+  renderBank();
+  renderHome();
+  autoSync();  // Supabase 자동 동기화
+}
+
+function deleteQ(id) {
+  if (!confirm('Delete this question?')) return;
+  rememberDeletedQuestions(questions.filter(q => q.id === id));
+  questions = questions.filter(q => q.id !== id);
+  renderBank();
+  renderHome();
+  autoSync();  // Supabase 자동 동기화
+}
+
+// Close modal on overlay click
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ─── TXT IMPORT (Assyst format) ───────────────────────────────
+// Format:
+//   # Question text
+//   + Correct answer
+//   - Wrong answer 1
+//   - Wrong answer 2
+//   (blank line between questions)
+
+function parseTxt(text) {
+  const parsed = [];
+  const errors = [];
+
+  // Split into blocks by blank lines or by # (new question marker)
+  // Normalize line endings
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+
+  let currentQ = null;
+
+  lines.forEach((rawLine, i) => {
+    const line = rawLine.trim();
+    if (!line) return; // skip blank lines
+
+    if (line.startsWith('#')) {
+      // Save previous question if exists
+      if (currentQ) parsed.push(currentQ);
+      currentQ = {
+        questionText: line.slice(1).trim(),
+        correct: null,
+        wrongs: []
+      };
+    } else if (line.startsWith('+')) {
+      if (!currentQ) { errors.push(`Line ${i+1}: '+' without a '#' question`); return; }
+      if (currentQ.correct) { errors.push(`Line ${i+1}: multiple '+' correct answers for "${currentQ.questionText.substring(0,30)}..."`); return; }
+      currentQ.correct = line.slice(1).trim();
+    } else if (line.startsWith('-')) {
+      if (!currentQ) { errors.push(`Line ${i+1}: '-' without a '#' question`); return; }
+      currentQ.wrongs.push(line.slice(1).trim());
+    }
+    // Ignore lines that don't start with #, +, or -
+  });
+
+  // Push last question
+  if (currentQ) parsed.push(currentQ);
+
+  // Validate and convert to question objects
+  const valid = [];
+  parsed.forEach((p, idx) => {
+    if (!p.questionText) { errors.push(`Question ${idx+1}: empty question text`); return; }
+    if (!p.correct) { errors.push(`Question ${idx+1} ("${p.questionText.substring(0,30)}"): no correct answer (+)`); return; }
+    if (p.wrongs.length < 1) { errors.push(`Question ${idx+1} ("${p.questionText.substring(0,30)}"): need at least 1 wrong answer (-)`); return; }
+    if (p.wrongs.length + 1 > CHOICE_IDS.length) {
+      errors.push(`Question ${idx+1} ("${p.questionText.substring(0,30)}"): too many choices (max ${CHOICE_IDS.length})`);
+      return;
+    }
+
+    // Shuffle: place correct answer at random position
+    const allAnswers = shuffleArray([p.correct, ...p.wrongs]);
+    const correctIdx = allAnswers.indexOf(p.correct);
+    const correctId = CHOICE_IDS[correctIdx];
+    const ts = nowIso();
+
+    valid.push({
+      id: makeQuestionId() + idx,
+      created_at: ts,
+      updated_at: ts,
+      deleted_at: null,
+      category: 'Imported',
+      difficulty: 'Medium',
+      stem: '',
+      question: p.questionText,
+      choices: allAnswers.map((text, i) => ({ id: CHOICE_IDS[i], text })),
+      correct: correctId,
+      explanation: { correct_why:'', pathophys:'', key_labs:'', treatment:'', trap:'', buzzwords:[], wrong_why:{} }
+    });
+  });
+
+  return { valid, errors };
+}
+
+function importTxt(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = ''; // reset so same file can be re-uploaded
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    const { valid, errors } = parseTxt(text);
+
+    const resultEl = document.getElementById('import-result');
+    resultEl.style.display = 'block';
+
+    if (valid.length === 0 && errors.length > 0) {
+      resultEl.innerHTML = `
+        <div style="background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:12px 16px">
+          <p style="font-weight:700;color:#A32D2D;margin-bottom:6px">❌ 파싱 실패</p>
+          <ul style="font-size:12px;color:#A32D2D;margin:0;padding-left:16px">${errors.map(e=>`<li>${escapeHtml(e)}</li>`).join('')}</ul>
+        </div>`;
+      return;
+    }
+
+    questions.push(...valid);
+    renderBank();
+    renderHome();
+    autoSync();  // Supabase 자동 동기화
+
+    let html = `<div style="background:#E1F5EE;border:1px solid #5DCAA5;border-radius:8px;padding:12px 16px">
+      <p style="font-weight:700;color:#0F6E56;margin-bottom:4px">✅ ${valid.length}개 문제가 문제은행에 추가되었습니다!</p>
+      <p style="font-size:12px;color:#0F6E56">카테고리: "Imported" · 난이도: Medium으로 추가됨 (각 문제에서 수정 가능)</p>
+    </div>`;
+    if (errors.length) {
+      html += `<div style="background:#FAEEDA;border:1px solid #EF9F27;border-radius:8px;padding:10px 16px;margin-top:8px">
+        <p style="font-weight:700;color:#854F0B;margin-bottom:4px">⚠ ${errors.length}개 항목 건너뜀</p>
+        <ul style="font-size:12px;color:#854F0B;margin:0;padding-left:16px">${errors.map(e=>`<li>${escapeHtml(e)}</li>`).join('')}</ul>
+      </div>`;
+    }
+    resultEl.innerHTML = html;
+
+    // Auto-hide after 6s
+    setTimeout(() => { resultEl.style.display = 'none'; }, 6000);
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+// ─────────────────────────────────────────────────────────────
+
+// ─── SAVE APP STATE ────────────────────────────────────────────
+// 현재 questions 배열을 HTML 소스의 let questions = [...] 에 구워서 저장
+function saveAppState() {
+  const btn = document.getElementById('nav-save-btn');
+  if (btn) { btn.classList.add('saving'); btn.textContent = '저장 중...'; }
+
+  // 현재 HTML 소스 가져오기
+  const originalHtml = document.documentElement.outerHTML;
+
+  questions = normalizeQuestions(questions);
+  if (typeof saveToCache === 'function') saveToCache(questions);
+
+  // questions 배열을 JSON으로 직렬화. script 종료 문자열은 HTML 안에서 안전하게 이스케이프한다.
+  const newData = JSON.stringify(questions, null, 0).replace(/<\/script/gi, '<\\/script');
+  const replacement = 'let questions = /*Q_START*/ ' + newData + ' /*Q_END*/;';
+
+  let replaced = originalHtml.replace(
+    /let questions = \/\*Q_START\*\/[\s\S]*?\/\*Q_END\*\/;/,
+    replacement
+  );
+  if (replaced === originalHtml) {
+    replaced = originalHtml.replace(
+      /let questions = \[[\s\S]*?\];(?=\s*let editingId\b)/,
+      replacement
+    );
   }
 
-  // 메타데이터 저장
-  allItems.forEach(function(item){
-    var vid=item.id.videoId;
-    vidMeta[vid]={
-      title:(item.snippet&&item.snippet.title)||vid,
-      thumb:(item.snippet&&item.snippet.thumbnails&&
-             item.snippet.thumbnails.default&&
-             item.snippet.thumbnails.default.url)||""
+  if (replaced === originalHtml) {
+    showToast('⚠️ 저장 패턴을 찾지 못했습니다.');
+    if (btn) { btn.classList.remove('saving'); btn.textContent = '💾 최종 저장'; }
+    return;
+  }
+
+  // DOCTYPE 포함 전체 HTML 구성
+  const fullHtml = '<!DOCTYPE html>\n' + replaced;
+
+  // 파일 다운로드
+  const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const date = new Date().toISOString().slice(0, 10);
+  a.download = 'usmle_quiz_' + date + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showToast('✅ ' + questions.length + '개 문제가 저장된 파일을 다운로드했습니다.', 3000);
+  if (btn) {
+    btn.textContent = '✓ 저장 완료';
+    setTimeout(() => {
+      btn.classList.remove('saving');
+      btn.textContent = '💾 최종 저장';
+    }, 2000);
+  }
+}
+// ─────────────────────────────────────────────────────────────
+
+// ─── TXT EXPORT ───────────────────────────────────────────────
+function exportTxt() {
+  if (!questions.length) {
+    alert('문제은행이 비어 있습니다.');
+    return;
+  }
+  if (!confirm('TXT 내보내기는 질문과 보기만 포함합니다. Stem, 해설, 카테고리, 난이도까지 보존하려면 "최종 저장" HTML을 사용하세요. 계속할까요?')) {
+    return;
+  }
+
+  const lines = [];
+  questions.forEach((q, i) => {
+    // Question line
+    lines.push('# ' + q.question);
+
+    // Find correct answer text
+    const correctChoice = q.choices.find(c => c.id === q.correct);
+    const correctText = correctChoice ? correctChoice.text : '';
+
+    // Write correct first (+), then wrongs (-)
+    lines.push('+ ' + correctText);
+    q.choices.forEach(c => {
+      if (c.id !== q.correct) lines.push('- ' + c.text);
+    });
+
+    // Blank line between questions
+    if (i < questions.length - 1) lines.push('');
+  });
+
+  const txt = lines.join('\n');
+  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'question_bank_' + new Date().toISOString().slice(0,10) + '.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+// ─────────────────────────────────────────────────────────────
+
+function setCorrect(id) {
+  document.getElementById('f-correct').value = id;
+  CHOICE_IDS.forEach(x => {
+    const wrap = document.getElementById('wrap-' + x);
+    const radio = wrap ? wrap.querySelector('.choice-correct-radio') : null;
+    if (wrap) wrap.classList.toggle('is-correct', x === id);
+    if (radio) radio.checked = (x === id);
+  });
+}
+
+renderHome();
+</script>
+
+<!-- SUPABASE MODAL -->
+<div class="sb-modal-overlay" id="sb-modal">
+  <div class="sb-modal">
+    <h3>☁️ Supabase 클라우드 연동</h3>
+    <p>Supabase 프로젝트의 URL과 anon key를 입력하면<br>문제은행이 자동으로 동기화됩니다.</p>
+    <div class="sb-guide">
+      <b>Supabase 테이블 생성 SQL:</b>
+<pre><code>create table if not exists questions (
+  id text primary key,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  deleted_at timestamptz,
+  data jsonb not null
+);
+
+create table if not exists language_sync_meta (
+  key text primary key,
+  value text,
+  updated_at timestamptz default now()
+);</code></pre>
+      RLS를 켰다면 anon key가 읽기/쓰기 가능한 정책을 별도로 설정하세요.
+    </div>
+    <div class="sb-field">
+      <label>Project URL</label>
+      <input type="text" id="sb-url" placeholder="https://xxxxxxxxxxxx.supabase.co">
+    </div>
+    <div class="sb-field">
+      <label>Anon Key (public)</label>
+      <input type="password" id="sb-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5...">
+    </div>
+    <div class="sb-status" id="sb-status"></div>
+    <div class="sb-btn-row" id="sb-btn-row">
+      <button class="sb-btn-cancel" onclick="closeSbModal()">닫기</button>
+      <button class="sb-btn-connect" onclick="connectSupabase()">연결 테스트 & 저장</button>
+    </div>
+    <div class="sb-sync-row" id="sb-sync-row" style="display:none">
+      <button class="sb-sync-btn" onclick="sbPull()">⬇ 클라우드 기준으로 맞추기</button>
+      <button class="sb-sync-btn" onclick="sbPush()">⬆ 이 기기를 최종본으로 지정</button>
+      <button class="sb-btn-disconnect" onclick="disconnectSupabase()">연결 해제</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+//  SUPABASE INTEGRATION
+// ════════════════════════════════════════════════════
+const SB_URL_KEY = 'usmle_sb_url';
+const SB_KEY_KEY = 'usmle_sb_key';
+const SB_TABLE   = 'questions';
+const SB_META_TABLE = 'language_sync_meta';
+const LS_CACHE   = 'usmle_questions_cache';
+const LS_TOMBSTONES = 'usmle_question_tombstones';
+const LS_CANONICAL_VERSION = 'usmle_canonical_version';
+
+let _sbUrl       = localStorage.getItem(SB_URL_KEY) || '';
+let _sbKey       = localStorage.getItem(SB_KEY_KEY) || '';
+let _sbConnected = false;
+let _syncTimer = null;
+let _syncInFlight = false;
+let _syncPending = false;
+let _lastCanonicalVersion = localStorage.getItem(LS_CANONICAL_VERSION) || '';
+
+// ── 공통 헤더 ─────────────────────────────────────
+function sbHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': _sbKey,
+    'Authorization': 'Bearer ' + _sbKey
+  };
+}
+
+// ── localStorage 캐시 ─────────────────────────────
+function saveToCache(qs) {
+  try {
+    localStorage.setItem(LS_CACHE, JSON.stringify(normalizeQuestions(qs)));
+  } catch(e) {
+    if (e.name === 'QuotaExceededError' || e.code === 22) {
+      showToast('⚠️ 로컬 저장 공간 부족! Supabase 연동 권장');
+    }
+  }
+}
+function loadFromCache() {
+  try {
+    const raw = localStorage.getItem(LS_CACHE);
+    return raw ? normalizeQuestions(JSON.parse(raw)) : null;
+  } catch(e) { return null; }
+}
+
+function timestampOf(value) {
+  const t = Date.parse(value || '');
+  return Number.isNaN(t) ? 0 : t;
+}
+
+function loadTombstones() {
+  try {
+    return JSON.parse(localStorage.getItem(LS_TOMBSTONES) || '{}');
+  } catch(e) {
+    return {};
+  }
+}
+
+function saveTombstones(map) {
+  localStorage.setItem(LS_TOMBSTONES, JSON.stringify(map || {}));
+}
+
+function addTombstones(items) {
+  const tombstones = loadTombstones();
+  const deletedAt = nowIso();
+  (items || []).forEach(item => {
+    if (!item) return;
+    const q = normalizeQuestion(item);
+    q.updated_at = deletedAt;
+    q.deleted_at = deletedAt;
+    tombstones[String(q.id)] = {
+      id: q.id,
+      created_at: q.created_at || deletedAt,
+      updated_at: deletedAt,
+      deleted_at: deletedAt,
+      data: q
     };
   });
-
-  return allItems.map(function(i){return i.id.videoId;}).filter(Boolean);
+  saveTombstones(tombstones);
 }
 
-// ─── RapidAPI 자막 ─────────────────────────────────
-async function fetchSub(videoId,lang){
-  var langs=[lang];
-  if(lang!=="en") langs.push("en");
-  langs=langs.filter(function(v,i,a){return a.indexOf(v)===i;});
-  for(var i=0;i<langs.length;i++){
-    try{
-      var url="https://"+RA_HOST+"/download-json/"+videoId
-        +"?language="+langs[i]+"&response_mode=default";
-      var r=await fetch(url,{
-        method:"GET",
-        headers:{
-          "x-rapidapi-key":RA_KEY,
-          "x-rapidapi-host":RA_HOST,
-          "Content-Type":"application/json"
-        },
-        signal:AbortSignal.timeout(8000)
-      });
-      if(!r.ok) continue;
-      var data=await r.json();
-      if(!Array.isArray(data)||!data.length) continue;
-      return data.map(function(item){return{
-        start:parseFloat(item.start||0),
-        dur:parseFloat(item.dur||2),
-        text:String(item.text||"")
-          .replace(/&#39;/g,"'").replace(/&amp;/g,"&")
-          .replace(/&quot;/g,'"').replace(/\n/g," ").trim()
-      };}).filter(function(c){return c.text.length>0;});
-    }catch(e){continue;}
-  }
-  return null;
+function rowFromQuestion(q) {
+  const n = normalizeQuestion(q);
+  return {
+    id: String(n.id),
+    created_at: n.created_at,
+    updated_at: n.updated_at,
+    deleted_at: n.deleted_at || null,
+    data: n
+  };
 }
 
-// ─── 검색 ──────────────────────────────────────────
-async function doSearch(){
-  clearErr();
-  var q=document.getElementById("q").value.trim();
-  var lang=document.getElementById("lang").value;
-  if(!q){showErr("검색어를 입력하세요.");return;}
-
-  lastQ=q; clips=[]; cur=0; vidMeta={};
-  setList(smsg("⏳","YouTube에서 영상 검색 중…"));
-  document.getElementById("rcnt").textContent="–";
-  document.getElementById("ci").textContent="–";
-  document.getElementById("ct").textContent="–";
-  setSpin(true);
-
-  var vids=[];
-  try{vids=await searchVids(q,lang);}
-  catch(e){
-    setSpin(false);
-    showErr("YouTube 검색 실패: "+e.message);
-    setList(smsg("⚠️",esc(e.message)));
-    return;
-  }
-
-  if(!vids.length){
-    setSpin(false);
-    showErr('"'+q+'" 관련 영상을 찾지 못했습니다.');
-    setList(smsg("😶","결과 없음"));
-    document.getElementById("rcnt").textContent="0";
-    return;
-  }
-
-  setList(smsg("📄","영상 "+vids.length+"개에서 자막 분석 중…"));
-
-  // 병렬 자막 fetch
-  var results=await Promise.all(vids.map(async function(vid){
-    try{
-      var caps=await fetchSub(vid,lang);
-      if(!caps) return [];
-      return caps
-        .filter(function(c){return c.text.toLowerCase().indexOf(q.toLowerCase())!==-1;})
-        .map(function(h){return{videoId:vid,start:h.start,dur:h.dur,text:h.text};});
-    }catch(e){return [];}
-  }));
-
-  var found=[].concat.apply([],results);
-  setSpin(false);
-  clips=found;
-
-  if(!found.length){
-    showErr('영상은 찾았지만 "'+q+'" 가 포함된 자막이 없습니다. 다른 단어를 시도해보세요.');
-    setList(smsg("😶","자막 매칭 없음"));
-    document.getElementById("rcnt").textContent="0";
-    return;
-  }
-
-  renderResults();
-  playAt(0);
+function rowFromDeleted(q, deletedAt) {
+  const n = normalizeQuestion(q);
+  n.updated_at = deletedAt;
+  n.deleted_at = deletedAt;
+  return {
+    id: String(n.id),
+    created_at: n.created_at || deletedAt,
+    updated_at: deletedAt,
+    deleted_at: deletedAt,
+    data: n
+  };
 }
 
-// ─── 결과 렌더 (영상별 그룹핑) ─────────────────────
-function renderResults(){
-  document.getElementById("rcnt").textContent=clips.length+"개";
-  var list=document.getElementById("rlist");
-  list.innerHTML="";
-  var groups={},order=[];
-  clips.forEach(function(c,i){
-    if(!groups[c.videoId]){groups[c.videoId]=[];order.push(c.videoId);}
-    groups[c.videoId].push({clip:c,idx:i});
+function rowFromTombstone(t) {
+  const data = normalizeQuestion(t.data || t);
+  data.updated_at = t.deleted_at || t.updated_at || data.updated_at;
+  data.deleted_at = t.deleted_at || data.deleted_at || data.updated_at;
+  return {
+    id: String(t.id ?? data.id),
+    created_at: t.created_at || data.created_at || data.deleted_at,
+    updated_at: data.deleted_at,
+    deleted_at: data.deleted_at,
+    data
+  };
+}
+
+function questionFromRow(row) {
+  const data = row.data || {};
+  const q = normalizeQuestion({ ...data, id: data.id ?? row.id });
+  q.created_at = row.created_at || q.created_at;
+  q.updated_at = row.updated_at || q.updated_at;
+  q.deleted_at = row.deleted_at || q.deleted_at || null;
+  return q;
+}
+
+async function fetchCloudRows() {
+  const res = await fetch(
+    _sbUrl + '/rest/v1/' + SB_TABLE + '?select=*&order=updated_at.desc',
+    { headers: sbHeaders() }
+  );
+  if (!res.ok) throw new Error('문제 테이블 조회 실패: HTTP ' + res.status + ' ' + await res.text());
+  return await res.json();
+}
+
+async function readCanonicalVersion() {
+  const res = await fetch(
+    _sbUrl + '/rest/v1/' + SB_META_TABLE + '?key=eq.canonical_version&select=value&limit=1',
+    { headers: sbHeaders() }
+  );
+  if (res.status === 404) throw new Error('메타 테이블 "' + SB_META_TABLE + '"이 없습니다. 안내 SQL을 먼저 실행하세요.');
+  if (!res.ok) throw new Error('메타 테이블 조회 실패: HTTP ' + res.status + ' ' + await res.text());
+  const rows = await res.json();
+  return rows[0]?.value || '';
+}
+
+async function writeCanonicalVersion() {
+  const version = nowIso() + ':' + Math.random().toString(36).slice(2);
+  const res = await fetch(_sbUrl + '/rest/v1/' + SB_META_TABLE + '?on_conflict=key', {
+    method: 'POST',
+    headers: { ...sbHeaders(), 'Prefer': 'resolution=merge-duplicates' },
+    body: JSON.stringify([{ key: 'canonical_version', value: version, updated_at: nowIso() }])
   });
-  order.forEach(function(vid){
-    var meta=vidMeta[vid]||{title:vid,thumb:""};
-    var items=groups[vid];
-    var isActive=(clips[cur]&&clips[cur].videoId===vid);
-    var grp=document.createElement("div");
-    grp.className="vid-group";
-    var hdr=document.createElement("div");
-    hdr.className="vid-header"+(isActive?" active-vid":"");
-    hdr.innerHTML=
-      (meta.thumb?'<img class="vid-thumb" src="'+esc(meta.thumb)+'" alt="" loading="lazy">':
-                  '<div class="vid-thumb"></div>')+
-      '<div class="vid-info">'+
-        '<div class="vid-title">'+esc(meta.title)+'</div>'+
-        '<div class="vid-meta">'+items.length+'개 구간 · '+
-          '<a href="https://youtu.be/'+esc(vid)+'" target="_blank" '+
-          'style="color:var(--accent2);text-decoration:none">YouTube ↗</a>'+
-        '</div>'+
-      '</div>'+
-      '<span class="vid-badge">'+items.length+'</span>';
-    hdr.addEventListener("click",function(){playAt(items[0].idx);});
-    grp.appendChild(hdr);
-    items.forEach(function(item){
-      var c=item.clip,i=item.idx;
-      var btn=document.createElement("button");
-      btn.className="ri"+(i===cur?" on":"");
-      btn.dataset.idx=i;
-      btn.innerHTML=
-        '<span class="ri-ts">'+fmt(c.start)+'</span>'+
-        '<span class="ri-txt">'+hl(c.text,lastQ)+'</span>'+
-        '<span class="ri-ic">'+(i===cur?"▶":"›")+'</span>';
-      btn.addEventListener("click",function(e){e.stopPropagation();playAt(i);});
-      grp.appendChild(btn);
+  if (!res.ok) throw new Error('canonical_version 저장 실패: HTTP ' + res.status + ' ' + await res.text());
+  _lastCanonicalVersion = version;
+  localStorage.setItem(LS_CANONICAL_VERSION, version);
+  return version;
+}
+
+async function upsertRows(rows) {
+  const chunkSize = 100;
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize);
+    const res = await fetch(_sbUrl + '/rest/v1/' + SB_TABLE + '?on_conflict=id', {
+      method: 'POST',
+      headers: { ...sbHeaders(), 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify(chunk)
     });
-    list.appendChild(grp);
-  });
-}
-
-function updateHL(){
-  document.querySelectorAll(".ri").forEach(function(el){
-    var i=parseInt(el.dataset.idx);
-    el.classList.toggle("on",i===cur);
-    el.querySelector(".ri-ic").textContent=i===cur?"▶":"›";
-  });
-  document.querySelectorAll(".vid-header").forEach(function(el){el.classList.remove("active-vid");});
-  var ab=document.querySelector('.ri[data-idx="'+cur+'"]');
-  if(ab){
-    var g=ab.closest(".vid-group");
-    if(g) g.querySelector(".vid-header").classList.add("active-vid");
-    ab.scrollIntoView({block:"nearest",behavior:"smooth"});
+    if (!res.ok) throw new Error('업서트 실패: HTTP ' + res.status + ' ' + await res.text());
   }
 }
 
-// ─── 재생 ──────────────────────────────────────────
-function playAt(idx){
-  if(!clips.length) return;
-  stopLoop(); cur=idx;
-  var c=clips[cur];
-  document.getElementById("ci").textContent=cur+1;
-  document.getElementById("ct").textContent=clips.length;
-  document.getElementById("cdis").innerHTML=hl(c.text,lastQ);
-  if(player&&player.loadVideoById) player.loadVideoById({videoId:c.videoId,startSeconds:c.start});
-  updateHL();
-  if(loopOn) startLoop();
-}
-function stopLoop(){clearInterval(loopTm);}
-function startLoop(){
-  stopLoop();
-  if(!clips.length||!player) return;
-  var c=clips[cur],end=c.start+c.dur+0.4;
-  loopTm=setInterval(function(){
-    try{var t=player.getCurrentTime?player.getCurrentTime():0;
-      if(t>=end){player.seekTo(c.start,true);player.playVideo();}
-    }catch(e){}
-  },200);
+function applyCloudSnapshot(rows) {
+  const active = [];
+  rows.forEach(row => {
+    const q = questionFromRow(row);
+    if (!q.deleted_at) active.push(q);
+  });
+  questions = active.sort((a, b) => timestampOf(b.updated_at) - timestampOf(a.updated_at));
+  saveTombstones({});
+  saveToCache(questions);
+  renderHome();
+  renderBank();
 }
 
-// ─── 이벤트 바인딩 ─────────────────────────────────
-document.getElementById("btnSearch").addEventListener("click",doSearch);
-document.getElementById("q").addEventListener("keydown",function(e){if(e.key==="Enter")doSearch();});
-document.getElementById("bPrev").addEventListener("click",function(){if(cur>0)playAt(cur-1);});
-document.getElementById("bNext").addEventListener("click",function(){if(cur<clips.length-1)playAt(cur+1);});
-document.getElementById("bReplay").addEventListener("click",function(){
-  if(!clips.length||!player) return;
-  player.seekTo(clips[cur].start,true);player.playVideo();
+function mergeCloudRows(rows) {
+  const byId = new Map();
+  normalizeQuestions(questions).forEach(q => byId.set(String(q.id), q));
+
+  const remoteTombstones = [];
+  rows.forEach(row => {
+    const q = questionFromRow(row);
+    const id = String(q.id);
+    if (q.deleted_at) {
+      remoteTombstones.push(q);
+      return;
+    }
+    const current = byId.get(id);
+    if (!current || timestampOf(q.updated_at) > timestampOf(current.updated_at)) {
+      byId.set(id, q);
+    }
+  });
+
+  const localTombstones = Object.values(loadTombstones()).map(rowFromTombstone).map(questionFromRow);
+  [...remoteTombstones, ...localTombstones].forEach(t => {
+    const current = byId.get(String(t.id));
+    const deletedAt = t.deleted_at || t.updated_at;
+    if (!current || timestampOf(deletedAt) >= timestampOf(current.updated_at)) {
+      byId.delete(String(t.id));
+    }
+  });
+
+  questions = Array.from(byId.values()).sort((a, b) => timestampOf(b.updated_at) - timestampOf(a.updated_at));
+}
+
+async function ensureCloudReady() {
+  const qRes = await fetch(_sbUrl + '/rest/v1/' + SB_TABLE + '?select=id,updated_at,deleted_at,data&limit=1', {
+    headers: sbHeaders()
+  });
+  if (qRes.status === 404) throw new Error('테이블 "' + SB_TABLE + '"이 없습니다. 안내 SQL로 먼저 생성하세요.');
+  if (!qRes.ok) throw new Error('문제 테이블 확인 실패: HTTP ' + qRes.status + ' ' + await qRes.text());
+  await readCanonicalVersion();
+}
+
+// ── Pull: 클라우드 기준 → 앱 ──────────────────────
+async function sbPull() {
+  setSyncStatus('loading', '클라우드 기준으로 맞추는 중...');
+  try {
+    const rows = await fetchCloudRows();
+    applyCloudSnapshot(rows);
+    const version = await readCanonicalVersion();
+    if (version) {
+      _lastCanonicalVersion = version;
+      localStorage.setItem(LS_CANONICAL_VERSION, version);
+    }
+    setSyncStatus('ok', '✓ 클라우드 기준 ' + questions.length + '개 문제로 맞췄습니다.');
+    showToast('☁️ 클라우드 기준 동기화 완료');
+    closeSbModal();
+  } catch(e) {
+    setSyncStatus('err', '불러오기 실패: ' + e.message);
+  }
+}
+
+// ── Push: 이 기기를 최종본으로 지정 ──────────────
+async function sbPush() {
+  if (!questions.length && !confirm('현재 기기의 문제은행이 비어 있습니다. 빈 문제은행을 최종본으로 지정할까요?')) return;
+  setSyncStatus('loading', '이 기기를 최종본으로 지정하는 중... (' + questions.length + '개)');
+  try {
+    const finalizedAt = nowIso();
+    questions = normalizeQuestions(questions).map(q => ({ ...q, updated_at: finalizedAt, deleted_at: null }));
+    const cloudRows = await fetchCloudRows();
+    const localIds = new Set(questions.map(q => String(q.id)));
+    const remoteDeletes = cloudRows
+      .map(questionFromRow)
+      .filter(q => !q.deleted_at && !localIds.has(String(q.id)))
+      .map(q => rowFromDeleted(q, finalizedAt));
+
+    await upsertRows([...questions.map(rowFromQuestion), ...remoteDeletes]);
+    await writeCanonicalVersion();
+    saveTombstones({});
+    saveToCache(questions);
+    renderHome();
+    renderBank();
+    setSyncStatus('ok', '✓ 이 기기가 최종본으로 지정되었습니다. (' + questions.length + '개)');
+    showToast('☁️ 최종본 지정 완료');
+    closeSbModal();
+  } catch(e) {
+    setSyncStatus('err', '업로드 실패: ' + e.message);
+  }
+}
+
+// ── Auto-sync: 문제 수정/추가/삭제 후 자동 호출 ─
+function autoSync(options = {}) {
+  questions = normalizeQuestions(questions);
+  saveToCache(questions);
+  if (!_sbConnected) return Promise.resolve(false);
+  if (!options.immediate) {
+    clearTimeout(_syncTimer);
+    _syncTimer = setTimeout(() => runAutoSync({ silent: true }), 1500);
+    return Promise.resolve(true);
+  }
+  return runAutoSync(options);
+}
+
+async function runAutoSync(options = {}) {
+  const silent = options.silent !== false;
+  if (_syncInFlight) {
+    _syncPending = true;
+    return false;
+  }
+  _syncInFlight = true;
+  updateSyncDot('loading');
+  try {
+    const remoteCanonical = await readCanonicalVersion();
+    const canonicalChanged = remoteCanonical && remoteCanonical !== _lastCanonicalVersion;
+    const cloudRows = await fetchCloudRows();
+
+    if (canonicalChanged) {
+      applyCloudSnapshot(cloudRows);
+      _lastCanonicalVersion = remoteCanonical;
+      localStorage.setItem(LS_CANONICAL_VERSION, remoteCanonical);
+      updateSyncDot('ok');
+      if (!silent) setSyncStatus('ok', '✓ 최종본 변경을 감지해 클라우드 기준으로 맞췄습니다.');
+      else showToast('☁️ 최종본 변경 감지 — 클라우드 기준 반영');
+      return true;
+    }
+
+    mergeCloudRows(cloudRows);
+    saveToCache(questions);
+    renderHome();
+    renderBank();
+
+    const tombstoneRows = Object.values(loadTombstones()).map(rowFromTombstone);
+    const rowsToUpsert = [...questions.map(rowFromQuestion), ...tombstoneRows];
+    if (rowsToUpsert.length) await upsertRows(rowsToUpsert);
+    saveTombstones({});
+    updateSyncDot('ok');
+    if (!silent) setSyncStatus('ok', '✓ 병합 동기화 완료 (' + questions.length + '개)');
+    return true;
+  } catch(e) {
+    updateSyncDot('err');
+    if (!silent) setSyncStatus('err', '동기화 실패: ' + e.message);
+    else showToast('⚠️ 자동 동기화 실패: ' + e.message, 3500);
+    return false;
+  } finally {
+    _syncInFlight = false;
+    if (_syncPending) {
+      _syncPending = false;
+      autoSync({ immediate: true, silent: true });
+    }
+  }
+}
+
+// ── 연결 테스트 ───────────────────────────────────
+async function connectSupabase() {
+  const url = document.getElementById('sb-url').value.trim().replace(/\/+$/, '');
+  const key = document.getElementById('sb-key').value.trim();
+  if (!url || !key) { setSyncStatus('err', 'URL과 Key를 모두 입력해주세요.'); return; }
+  setSyncStatus('loading', '연결 테스트 중...');
+  try {
+    _sbUrl = url; _sbKey = key; _sbConnected = true;
+    await ensureCloudReady();
+    localStorage.setItem(SB_URL_KEY, url);
+    localStorage.setItem(SB_KEY_KEY, key);
+    setSyncStatus('loading', '✓ 연결 성공. 즉시 동기화 중...');
+    document.getElementById('sb-sync-row').style.display = 'flex';
+    const synced = await autoSync({ immediate: true, silent: false });
+    if (synced) showToast('☁️ Supabase 연결 및 동기화 완료');
+  } catch(e) {
+    _sbConnected = false;
+    updateSyncDot('err');
+    setSyncStatus('err', '연결 실패: ' + e.message);
+  }
+}
+
+function disconnectSupabase() {
+  if (!confirm('Supabase 연결을 해제하시겠습니까?')) return;
+  _sbUrl = ''; _sbKey = ''; _sbConnected = false;
+  localStorage.removeItem(SB_URL_KEY);
+  localStorage.removeItem(SB_KEY_KEY);
+  updateSyncDot('');
+  document.getElementById('sb-url').value = '';
+  document.getElementById('sb-key').value = '';
+  document.getElementById('sb-sync-row').style.display = 'none';
+  setSyncStatus('', '');
+  showToast('Supabase 연결 해제됨');
+}
+
+// ── UI helpers ────────────────────────────────────
+function updateSyncDot(state) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  if (!dot) return;
+  dot.className = 'sync-dot' + (state ? ' ' + state : '');
+  if (lbl) lbl.textContent = state === 'ok' ? 'Cloud ✓' : state === 'err' ? 'Cloud ✗' : state === 'loading' ? 'Syncing...' : 'Cloud';
+}
+
+function setSyncStatus(type, msg) {
+  const el = document.getElementById('sb-status');
+  if (!el) return;
+  el.className = 'sb-status' + (type ? ' ' + type : '');
+  el.textContent = msg;
+}
+
+function openSbModal() {
+  document.getElementById('sb-url').value = _sbUrl;
+  document.getElementById('sb-key').value = _sbKey;
+  setSyncStatus('', '');
+  document.getElementById('sb-sync-row').style.display = _sbConnected ? 'flex' : 'none';
+  if (_sbConnected) setSyncStatus('ok', '현재 연결됨 ✓');
+  document.getElementById('sb-modal').classList.add('open');
+}
+
+function closeSbModal() {
+  document.getElementById('sb-modal').classList.remove('open');
+}
+
+function showToast(msg, duration) {
+  duration = duration || 2500;
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function() { t.classList.remove('show'); }, duration);
+}
+
+// ── 앱 시작 시 자동 연결 복원 ────────────────────
+async function initSupabase() {
+  if (!_sbUrl || !_sbKey) {
+    const cached = loadFromCache();
+    if (cached && cached.length) { questions = cached; renderHome(); renderBank(); }
+    updateSyncDot('');
+    return;
+  }
+  updateSyncDot('loading');
+  try {
+    await ensureCloudReady();
+    _sbConnected = true;
+    await autoSync({ immediate: true, silent: true });
+  } catch(e) {
+    _sbConnected = false;
+    updateSyncDot('err');
+    const cached = loadFromCache();
+    if (cached && cached.length) { questions = cached; renderHome(); renderBank(); }
+    showToast('⚠️ 클라우드 연결 실패 — 로컬 캐시 사용 중');
+  }
+}
+
+// 모달 오버레이 클릭 시 닫기
+document.getElementById('sb-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeSbModal();
 });
-document.getElementById("bLoop").addEventListener("click",function(){
-  loopOn=!loopOn;
-  document.getElementById("bLoop").classList.toggle("on",loopOn);
-  document.getElementById("lb").classList.toggle("show",loopOn);
-  if(loopOn) startLoop(); else stopLoop();
-});
+
+// 앱 시작
+initSupabase();
 </script>
 </body>
 </html>
