@@ -348,21 +348,29 @@ select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-
         </div>
         <div class="dev-info-card">
           <div class="dev-label">앱 이름 · 버전</div>
-          <div class="dev-value">Dr. Bugeon의 USMLE 퀴즈앱 v2.2</div>
+          <div class="dev-value">Dr. Bugeon의 USMLE 퀴즈앱 v2.3</div>
         </div>
         <div class="dev-info-card">
           <div class="dev-label">코드 최종 수정</div>
-          <div class="dev-value">2026년 6월 8일 18:17:21</div>
+          <div class="dev-value">2026년 6월 9일 20:23</div>
         </div>
         <div class="dev-info-card">
           <div class="dev-label">현재 파일명</div>
-          <div class="dev-value">웹 앱</div>
+          <div class="dev-value" id="dev-current-file">웹 앱</div>
         </div>
       </div>
       <p class="dev-desc">USMLE 문항을 직접 만들고 반복 학습할 수 있도록 설계한 개인 학습용 앱입니다. 의료 판단에는 원문 출처와 최신 임상지침을 별도로 확인해야 합니다.</p>
       <h4 class="dev-section-title">업데이트 이력</h4>
       <div class="update-card latest">
-        <h4>최신 · 데이터 관리와 개발자 정보 UI 추가</h4>
+        <h4>최신 · 전수점검 버그 수정</h4>
+        <ul>
+          <li>문자열/UUID 문제 id에서도 문제은행 수정·삭제·선택 기능이 깨지지 않도록 보강</li>
+          <li>오프라인 삭제가 재연결 후 되살아나지 않도록 로컬 tombstone과 병합 동기화 추가</li>
+          <li>전체 백업에 삭제 기록과 현재 파일명 정보를 함께 반영</li>
+        </ul>
+      </div>
+      <div class="update-card">
+        <h4>v2.2 · 데이터 관리와 개발자 정보 UI 추가</h4>
         <ul>
           <li>네비의 파일 백업 버튼을 데이터 관리 창으로 이동</li>
           <li>전체 JSON 백업 내보내기와 가져오기(교체/병합) 추가</li>
@@ -647,6 +655,7 @@ let quizIdx = 0;
 let quizScore = 0;
 let answered = false;
 const CHOICE_IDS = 'ABCDEFGHIJ'.split('');
+const TOMBSTONE_CACHE_KEY = 'usmle_question_tombstones';
 
 function nowIso() {
   return new Date().toISOString();
@@ -668,6 +677,35 @@ function escapeHtml(value) {
 
 function escapeAttr(value) {
   return escapeHtml(value);
+}
+
+function jsArg(value) {
+  return JSON.stringify(value);
+}
+
+function questionKey(id) {
+  return String(id);
+}
+
+function sameQuestionId(a, b) {
+  return questionKey(a) === questionKey(b);
+}
+
+function questionDomId(prefix, id) {
+  return prefix + questionKey(id).replace(/[^a-zA-Z0-9_-]/g, ch => '_' + ch.charCodeAt(0).toString(16) + '_');
+}
+
+function findQuestionById(id) {
+  return questions.find(q => sameQuestionId(q.id, id));
+}
+
+function currentFileName() {
+  try {
+    const raw = decodeURIComponent((location.pathname || '').split('/').pop() || '');
+    return raw || document.title || '웹 앱';
+  } catch(e) {
+    return document.title || '웹 앱';
+  }
 }
 
 function normalizeQuestion(q) {
@@ -712,6 +750,70 @@ function shuffleArray(items) {
 
 function rememberDeletedQuestions(items) {
   if (typeof addTombstones === 'function') addTombstones(items);
+}
+
+function timestampMs(value) {
+  const t = Date.parse(value || '');
+  return Number.isNaN(t) ? 0 : t;
+}
+
+function normalizeTombstone(item) {
+  if (!item || item.id === undefined || item.id === null) return null;
+  const deletedAt = item.deleted_at || item.updated_at || nowIso();
+  return {
+    id: item.id,
+    created_at: item.created_at || deletedAt,
+    updated_at: deletedAt,
+    deleted_at: deletedAt
+  };
+}
+
+function normalizeTombstones(items) {
+  const byId = new Map();
+  (Array.isArray(items) ? items : []).forEach(item => {
+    const t = normalizeTombstone(item);
+    if (!t) return;
+    const key = questionKey(t.id);
+    const old = byId.get(key);
+    if (!old || timestampMs(t.updated_at) >= timestampMs(old.updated_at)) byId.set(key, t);
+  });
+  return Array.from(byId.values()).sort((a, b) => timestampMs(b.updated_at) - timestampMs(a.updated_at));
+}
+
+function loadTombstones() {
+  try {
+    const raw = localStorage.getItem(TOMBSTONE_CACHE_KEY);
+    return raw ? normalizeTombstones(JSON.parse(raw)) : [];
+  } catch(e) {
+    return [];
+  }
+}
+
+function saveTombstones(items) {
+  try {
+    localStorage.setItem(TOMBSTONE_CACHE_KEY, JSON.stringify(normalizeTombstones(items)));
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('⚠️ 삭제 기록 저장 공간이 부족합니다.');
+  }
+}
+
+function addTombstones(items) {
+  const deletedAt = nowIso();
+  const merged = loadTombstones();
+  (Array.isArray(items) ? items : []).forEach(item => {
+    if (!item || item.id === undefined || item.id === null) return;
+    merged.push({
+      id: item.id,
+      created_at: item.created_at || deletedAt,
+      updated_at: deletedAt,
+      deleted_at: deletedAt
+    });
+  });
+  saveTombstones(merged);
+}
+
+function mergeTombstoneBackups(current, incoming) {
+  return normalizeTombstones([...(Array.isArray(current) ? current : []), ...(Array.isArray(incoming) ? incoming : [])]);
 }
 
 questions = normalizeQuestions(questions);
@@ -945,7 +1047,6 @@ function renderBank() {
   if (selectedBankCat === 'ALL') {
     itemsHtml = cats.map(cat => {
       const qs = questions.filter(q => q.category === cat);
-      const catId = CSS.escape ? CSS.escape(cat) : cat.replace(/[^a-zA-Z0-9]/g,'_');
       return `
         <div class="cat-section">
           <div class="cat-section-title">
@@ -976,11 +1077,15 @@ function renderBank() {
 }
 
 function qItemHtml(q) {
-  const isChecked = _selectedIds.has(q.id);
+  const key = questionKey(q.id);
+  const idArg = jsArg(q.id);
+  const itemId = questionDomId('qitem-', q.id);
+  const checkboxId = questionDomId('chk-', q.id);
+  const isChecked = _selectedIds.has(key);
   return `
-    <div class="q-item${isChecked ? ' checked' : ''}" id="qitem-${q.id}" onclick="onItemClick(event, ${q.id})">
+    <div class="q-item${isChecked ? ' checked' : ''}" id="${escapeAttr(itemId)}" onclick="onItemClick(event, ${escapeAttr(idArg)})">
       <input class="q-item-check" type="checkbox" ${isChecked ? 'checked' : ''}
-        onclick="event.stopPropagation(); toggleSelect(${q.id})" id="chk-${q.id}">
+        onclick="event.stopPropagation(); toggleSelect(${escapeAttr(idArg)})" id="${escapeAttr(checkboxId)}">
       <div class="q-item-body">
         <div class="q-item-header">
           <div class="q-item-title">${escapeHtml(q.question)}</div>
@@ -990,8 +1095,8 @@ function qItemHtml(q) {
         </div>
         ${q.stem ? `<div class="q-item-preview">${escapeHtml(q.stem.substring(0,120))}${q.stem.length>120?'...':''}</div>` : ''}
         <div class="q-item-actions">
-          <button class="btn-edit" onclick="event.stopPropagation();openModal(${q.id})">수정</button>
-          <button class="btn-del" onclick="event.stopPropagation();deleteQ(${q.id})">삭제</button>
+          <button class="btn-edit" onclick="event.stopPropagation();openModal(${escapeAttr(idArg)})">수정</button>
+          <button class="btn-del" onclick="event.stopPropagation();deleteQ(${escapeAttr(idArg)})">삭제</button>
         </div>
       </div>
     </div>`;
@@ -1017,13 +1122,14 @@ function onItemClick(e, id) {
 
 // ── 개별 선택/해제 ────────────────────────────────
 function toggleSelect(id) {
-  if (_selectedIds.has(id)) _selectedIds.delete(id);
-  else _selectedIds.add(id);
+  const key = questionKey(id);
+  if (_selectedIds.has(key)) _selectedIds.delete(key);
+  else _selectedIds.add(key);
   // DOM 직접 업데이트 (전체 re-render 없이)
-  const item = document.getElementById('qitem-' + id);
-  const chk = document.getElementById('chk-' + id);
-  if (item) item.classList.toggle('checked', _selectedIds.has(id));
-  if (chk) chk.checked = _selectedIds.has(id);
+  const item = document.getElementById(questionDomId('qitem-', id));
+  const chk = document.getElementById(questionDomId('chk-', id));
+  if (item) item.classList.toggle('checked', _selectedIds.has(key));
+  if (chk) chk.checked = _selectedIds.has(key);
   updateSelCount();
 }
 
@@ -1032,7 +1138,7 @@ function selectAllVisible() {
   const visible = selectedBankCat === 'ALL'
     ? questions
     : questions.filter(q => q.category === selectedBankCat);
-  visible.forEach(q => _selectedIds.add(q.id));
+  visible.forEach(q => _selectedIds.add(questionKey(q.id)));
   renderBank();
 }
 
@@ -1051,9 +1157,9 @@ function updateSelCount() {
 function deleteSelected() {
   if (!_selectedIds.size) { showToast('선택된 문제가 없습니다.'); return; }
   if (!confirm(_selectedIds.size + '개 문제를 삭제하시겠습니까?')) return;
-  const deleted = questions.filter(q => _selectedIds.has(q.id));
+  const deleted = questions.filter(q => _selectedIds.has(questionKey(q.id)));
   rememberDeletedQuestions(deleted);
-  questions = questions.filter(q => !_selectedIds.has(q.id));
+  questions = questions.filter(q => !_selectedIds.has(questionKey(q.id)));
   _selectedIds.clear();
   _selectMode = false;
   renderBank(); renderHome();
@@ -1075,10 +1181,16 @@ function deleteByCat(cat) {
 }
 
 function openModal(id) {
-  editingId = id || null;
-  document.getElementById('modal-title').textContent = id ? 'Edit Question' : 'Add Question';
-  if (id) {
-    const q = questions.find(x => x.id === id);
+  editingId = (id === undefined || id === null) ? null : id;
+  const isEdit = editingId !== null;
+  document.getElementById('modal-title').textContent = isEdit ? 'Edit Question' : 'Add Question';
+  if (isEdit) {
+    const q = findQuestionById(editingId);
+    if (!q) {
+      showToast('⚠️ 수정할 문제를 찾지 못했습니다.');
+      editingId = null;
+      return;
+    }
     document.getElementById('f-cat').value = q.category;
     document.getElementById('f-diff').value = q.difficulty;
     document.getElementById('f-correct').value = q.correct;
@@ -1131,10 +1243,10 @@ function saveQuestion() {
     return;
   }
   const buzz = document.getElementById('f-buzz').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const existing = editingId ? questions.find(q => q.id === editingId) : null;
+  const existing = editingId !== null ? findQuestionById(editingId) : null;
   const ts = nowIso();
   const newQ = {
-    id: editingId || makeQuestionId(),
+    id: editingId !== null ? editingId : makeQuestionId(),
     created_at: existing?.created_at || ts,
     updated_at: ts,
     deleted_at: null,
@@ -1156,8 +1268,8 @@ function saveQuestion() {
       wrong_why: Object.fromEntries(CHOICE_IDS.map(id => [id, document.getElementById('f-w'+id).value.trim()]).filter(([,v])=>v))
     }
   };
-  if (editingId) {
-    questions = questions.map(q => q.id === editingId ? newQ : q);
+  if (editingId !== null) {
+    questions = questions.map(q => sameQuestionId(q.id, editingId) ? newQ : q);
   } else {
     questions.push(newQ);
   }
@@ -1169,8 +1281,8 @@ function saveQuestion() {
 
 function deleteQ(id) {
   if (!confirm('Delete this question?')) return;
-  rememberDeletedQuestions(questions.filter(q => q.id === id));
-  questions = questions.filter(q => q.id !== id);
+  rememberDeletedQuestions(questions.filter(q => sameQuestionId(q.id, id)));
+  questions = questions.filter(q => !sameQuestionId(q.id, id));
   renderBank();
   renderHome();
   autoSync();  // Supabase 자동 동기화
@@ -1428,11 +1540,14 @@ function downloadBlob(blob, filename) {
 
 function exportFullBackup() {
   questions = normalizeQuestions(questions);
+  const tombstones = loadTombstones();
   const payload = {
     app: 'Dr. Bugeon USMLE Quiz App',
-    version: '2.2',
+    version: '2.3',
     exported_at: nowIso(),
     count: questions.length,
+    deleted_count: tombstones.length,
+    tombstones,
     questions
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -1470,6 +1585,7 @@ function importFullBackup(input) {
     try {
       const parsed = JSON.parse(e.target.result);
       const imported = normalizeQuestions(Array.isArray(parsed) ? parsed : parsed.questions);
+      const importedTombstones = normalizeTombstones(Array.isArray(parsed?.tombstones) ? parsed.tombstones : []);
       if (!imported.length) {
         alert('가져올 문제가 없습니다.');
         return;
@@ -1484,8 +1600,12 @@ function importFullBackup(input) {
       questions = mode === 'replace'
         ? imported
         : mergeQuestionBackups(questions, imported);
+      saveTombstones(mode === 'replace'
+        ? importedTombstones
+        : mergeTombstoneBackups(loadTombstones(), importedTombstones));
 
       saveToCache(questions);
+      if (typeof markLocalDirty === 'function') markLocalDirty();
       renderHome();
       renderBank();
       showToast((mode === 'replace' ? '↺ 전체 백업 교체 완료' : '＋ 전체 백업 병합 완료') + ' · ' + questions.length + '개');
@@ -1514,6 +1634,8 @@ function closeDataModal() {
 }
 
 function openDevInfoModal() {
+  const fileEl = document.getElementById('dev-current-file');
+  if (fileEl) fileEl.textContent = currentFileName();
   document.getElementById('dev-info-modal').classList.add('open');
 }
 
@@ -1579,6 +1701,7 @@ const SB_STATE_KEY = 'quiz_state';
 const LS_CACHE   = 'usmle_questions_cache';
 const LS_CANONICAL_VERSION = 'usmle_canonical_version';
 const LS_REVISION = 'usmle_sync_revision';
+const LS_DIRTY = 'usmle_local_dirty_at';
 
 let _sbUrl       = localStorage.getItem(SB_URL_KEY) || '';
 let _sbKey       = localStorage.getItem(SB_KEY_KEY) || '';
@@ -1616,6 +1739,18 @@ function loadFromCache() {
   } catch(e) { return null; }
 }
 
+function markLocalDirty() {
+  try { localStorage.setItem(LS_DIRTY, nowIso()); } catch(e) {}
+}
+
+function clearLocalDirty() {
+  try { localStorage.removeItem(LS_DIRTY); } catch(e) {}
+}
+
+function hasLocalDirty() {
+  try { return !!localStorage.getItem(LS_DIRTY); } catch(e) { return false; }
+}
+
 function timestampOf(value) {
   const t = Date.parse(value || '');
   return Number.isNaN(t) ? 0 : t;
@@ -1623,6 +1758,24 @@ function timestampOf(value) {
 
 function sortQuestionsNewestFirst(rows) {
   return normalizeQuestions(rows).sort((a, b) => timestampOf(b.updated_at) - timestampOf(a.updated_at));
+}
+
+function mergeQuestionsByLatest(localRows, remoteRows, tombstones) {
+  const byId = new Map();
+  const put = q => {
+    const n = normalizeQuestion(q);
+    const key = questionKey(n.id);
+    const existing = byId.get(key);
+    if (!existing || timestampOf(n.updated_at) >= timestampOf(existing.updated_at)) byId.set(key, n);
+  };
+  normalizeQuestions(remoteRows).forEach(put);
+  normalizeQuestions(localRows).forEach(put);
+  normalizeTombstones(tombstones).forEach(t => {
+    const key = questionKey(t.id);
+    const existing = byId.get(key);
+    if (!existing || timestampOf(t.updated_at) >= timestampOf(existing.updated_at)) byId.delete(key);
+  });
+  return sortQuestionsNewestFirst(Array.from(byId.values()));
 }
 
 function newCanonicalVersion() {
@@ -1752,6 +1905,7 @@ async function sbActivateSnapshot(expectedRevision, newVersion, recordCount, for
 function markCloudState(records) {
   questions = sortQuestionsNewestFirst(records);
   saveToCache(questions);
+  clearLocalDirty();
   localStorage.setItem(LS_CANONICAL_VERSION, _sbCanonicalVersion);
   localStorage.setItem(LS_REVISION, String(_sbRevision ?? 0));
   renderHome();
@@ -1765,30 +1919,38 @@ async function ensureCloudReady() {
   await sbGetState();
 }
 
-async function sbPublishSnapshot(force = false) {
-  const records = sortQuestionsNewestFirst(questions);
+async function sbPublishSnapshot(force = false, attempt = 0) {
   const remote = await sbGetState();
   if (_sbRevision === null) {
     _sbRevision = remote.revision;
     _sbCanonicalVersion = remote.canonical_version;
   }
-  if (!force && remote.revision !== _sbRevision) {
-    await sbPull(true);
-    throw new Error('다른 기기에서 먼저 저장했습니다. 클라우드 최종본을 다시 불러왔습니다.');
+  let records = sortQuestionsNewestFirst(questions);
+  let expectedRevision = Number(_sbRevision) || 0;
+
+  if (!force) {
+    const remoteRecords = await sbLoadVersion(remote.canonical_version);
+    records = mergeQuestionsByLatest(questions, remoteRecords, loadTombstones());
+    expectedRevision = Number(remote.revision) || 0;
   }
 
   const newVersion = newCanonicalVersion();
   const previousVersion = remote.canonical_version;
-  showSyncBadge('syncing', force ? '이 기기를 새 최종본으로 저장 중...' : records.length + '개 문제 변경 검증 중...');
+  showSyncBadge('syncing', force ? '이 기기를 새 최종본으로 저장 중...' : records.length + '개 문제 병합 저장 중...');
   try {
     await sbStageSnapshot(records, newVersion);
-    const result = await sbActivateSnapshot(_sbRevision, newVersion, records.length, force);
+    const result = await sbActivateSnapshot(expectedRevision, newVersion, records.length, force);
     if (!result?.ok) {
       await sbDeleteVersion(newVersion).catch(() => {});
-      await sbPull(true);
-      throw new Error('revision 충돌로 이 기기의 오래된 변경을 취소하고 최신 최종본을 불러왔습니다.');
+      if (!force && attempt < 1) {
+        return sbPublishSnapshot(false, attempt + 1);
+      }
+      if (force) await sbPull(true);
+      throw new Error(force
+        ? 'revision 충돌로 최신 최종본을 다시 불러왔습니다.'
+        : '클라우드 변경과 다시 충돌했습니다. 로컬 변경은 보존되어 있으니 잠시 후 다시 동기화하세요.');
     }
-    _sbRevision = Number(result.revision) || (_sbRevision + 1);
+    _sbRevision = Number(result.revision) || (expectedRevision + 1);
     _sbCanonicalVersion = String(result.canonical_version || newVersion);
     markCloudState(records);
     if (previousVersion && previousVersion !== 'legacy' && previousVersion !== newVersion) {
@@ -1858,6 +2020,7 @@ async function sbPush() {
 // ── Auto-sync: 문제 수정/추가/삭제 후 자동 호출 ─
 function autoSync(options = {}) {
   questions = normalizeQuestions(questions);
+  markLocalDirty();
   saveToCache(questions);
   if (!_sbConnected) return Promise.resolve(false);
   if (!options.immediate) {
@@ -1909,7 +2072,9 @@ async function connectSupabase() {
     updateSbUI();
     setSyncStatus('loading', '✓ 연결 성공. 클라우드 최종본을 불러오는 중...');
     document.getElementById('sb-sync-row').style.display = 'grid';
-    const synced = await sbPull(false);
+    const dirty = hasLocalDirty();
+    if (dirty) setSyncStatus('loading', '✓ 연결 성공. 로컬 변경을 클라우드와 병합 저장 중...');
+    const synced = dirty ? await runAutoSync({ silent: false }) : await sbPull(false);
     if (synced) showToast('☁️ Supabase 연결 및 동기화 완료');
   } catch(e) {
     _sbConnected = false;
@@ -2035,7 +2200,11 @@ async function initSupabase() {
   try {
     await ensureCloudReady();
     _sbConnected = true;
-    await sbPull(true);
+    if (hasLocalDirty()) {
+      await runAutoSync({ silent: true });
+    } else {
+      await sbPull(true);
+    }
     updateSbUI();
   } catch(e) {
     _sbConnected = false;
